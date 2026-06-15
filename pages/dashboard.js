@@ -28,99 +28,121 @@ import {
   Utensils, 
   Heart,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  HelpCircle,
+  X,
+  Info
 } from 'lucide-react';
 
 const WEEKDAYS = [
-  { day: 'Sunday', key: 'Sunday', title: "Lower Body, Abs & Cardio (A) — Endocrine Activation" },
-  { day: 'Monday', key: 'Monday', title: "Upper Body & Arms (B) — Postural Realignment" },
-  { day: 'Tuesday', key: 'Tuesday', title: "Active Functional Recovery — Postural Calibration" },
-  { day: 'Wednesday', key: 'Wednesday', title: "Active Functional Recovery — Postural Calibration" },
-  { day: 'Thursday', key: 'Thursday', title: "Lower Body, Abs & Cardio (B) — Posterior Chain" },
-  { day: 'Friday', key: 'Friday', title: "Absolute Nervous System Restoration — Peak Synthesis" },
-  { day: 'Saturday', key: 'Saturday', title: "Upper Body & Arms (A) — V-Taper Primary Width" }
+  { day: 'Sunday', key: 'Sunday', title: "Lower Body, Abs & Cardio — Endocrine Activation & Leaning" },
+  { day: 'Monday', key: 'Monday', title: "Upper Body & Arms — V-Taper Primary Width Focus" },
+  { day: 'Tuesday', key: 'Tuesday', title: "Active Recovery — Postural Calibration & Core Stability" },
+  { day: 'Wednesday', key: 'Wednesday', title: "Active Recovery — Spinal Decompression & Tissue Repair" },
+  { day: 'Thursday', key: 'Thursday', title: "Lower Body, Abs & Cardio — Endocrine Activation & Leaning" },
+  { day: 'Friday', key: 'Friday', title: "Absolute Rest — Nervous System Restoration" },
+  { day: 'Saturday', key: 'Saturday', title: "Upper Body & Arms — V-Taper Primary Width Focus" }
+];
+
+const UPPER_BODY_ROSTER = [
+  { name: 'Warm-up Protocol', target: '5 Mins', note: 'Arm Circles & Cat-Cow Stretch' },
+  { name: 'Assisted Pull-ups', target: '3-4 sets × 5-7 reps', note: 'Primary V-taper lat width driver' },
+  { name: 'Seated Machine Rows', target: '3 sets × 10-12 reps', note: 'Mid-back thickness and posture control' },
+  { name: 'Dumbbell Bench Press', target: '3 sets × 10 reps', note: 'Horizontal pressing chest mass builder' },
+  { name: 'Assisted Push-ups on Knees', target: '2 sets × 10 reps', note: 'Chest conditioner & endurance finisher' },
+  { name: 'Dumbbell Shoulder Press', target: '3 sets × 10 reps', note: 'Anterior deltoid mass builder' },
+  { name: 'Dumbbell Lateral Raises', target: '3 sets × 12-15 reps', note: 'Medial deltoid lateral width' },
+  { name: 'Dumbbell Bicep Curls', target: '3 sets × 10-12 reps', note: 'Arm flexion biceps hypertrophy' },
+  { name: 'Overhead DB Tricep Extensions', target: '3 sets × 12 reps', note: 'Triceps long head developer' },
+  { name: 'Wrist Curls + Reverse Wrist Curls Superset', target: '3 sets × Failure', note: 'Grip stabilization & wrist density' }
+];
+
+const LOWER_BODY_ROSTER = [
+  { name: 'Warm-up Protocol', target: '5 Mins', note: 'Bodyweight Squats & Torso Twists' },
+  { name: 'Weighted Squats', target: '3 sets × 12 reps', note: 'CNS stimulation & quad sweeps' },
+  { name: 'Walking Lunges', target: '3 sets × 20 steps total', note: 'Dynamic unilateral quad and glute load' },
+  { name: 'Dumbbell Romanian Deadlifts (RDLs)', target: '3 sets × 10 reps', note: 'Posterior chain glutes & hamstring builder' },
+  { name: 'Standing Calf Raises', target: '3 sets × 15-20 reps', note: 'Ankle flexion and lower leg density' },
+  { name: 'Lying Leg Raises', target: '3 sets × 12-15 reps', note: 'Core stabilizer lower abdominal target' },
+  { name: 'Core & Flexibility Superset', target: '3 Rounds', note: 'Forearm Planks (45s) & Cobra Stretch (30s)' },
+  { name: 'Cardio Finisher', target: '17-20 Mins total', note: '12-15 min Run + 5 min Cycle' }
 ];
 
 const ROUTINES = {
   'Saturday': {
-    title: 'Upper Body & Arms (A) — V-Taper Primary Width Focus',
+    title: 'Upper Body & Arms — V-Taper Primary Width Focus',
     color: 'border-sky-500/40 text-sky-400',
     accentColor: '#38bdf8',
-    roster: [
-      { name: 'Weighted Pull-Ups', target: '3-4 sets × 6-8 reps', note: 'Primary V-taper lat width driver' },
-      { name: 'Bench / Chest Press', target: '3-4 sets × 8-10 reps', note: 'Horizontal pressing mass builder' },
-      { name: 'Seated Rows', target: '3 sets × 10 reps', note: 'Mid-back thickness and posture control' },
-      { name: 'Dumbbell Lateral Raises', target: '4 sets × 12-15 reps', note: 'Medial deltoid lateral width' },
-      { name: 'Forearm Isolation Circuit', target: '3 sets × 15 reps', note: 'Grip stabilization and wrist density' }
-    ]
-  },
-  'Sunday': {
-    title: 'Lower Body, Abs & Cardio (A) — Endocrine Activation & Leaning',
-    color: 'border-emerald-500/40 text-emerald-400',
-    accentColor: '#34d399',
-    roster: [
-      { name: 'Weighted Squats', target: '4 sets × 8-10 reps', note: 'Posterior chain recruitment and CNS load' },
-      { name: 'Romanian Deadlifts (RDLs)', target: '3 sets × 10 reps', note: 'Hamstring & glute hypertrophy focus' },
-      { name: 'Walking Lunges', target: '3 sets × 12 reps per leg', note: 'Unilateral loading & quad sweeps' },
-      { name: 'Standing Calf Raises', target: '4 sets × 15 reps', note: 'Ankle mobility and calf density' },
-      { name: 'Hanging Leg Raises', target: '3 sets × Failure', note: 'Deep lower abdominal compression' },
-      { name: 'Metabolic Finisher: Run & Cycle Intervals', target: '15-20 Minutes', note: 'High intensity aerobic optimization' }
-    ]
+    roster: UPPER_BODY_ROSTER
   },
   'Monday': {
-    title: 'Upper Body & Arms (B) — Postural Realignment & Mass Density',
+    title: 'Upper Body & Arms — V-Taper Primary Width Focus',
     color: 'border-sky-500/40 text-sky-400',
     accentColor: '#38bdf8',
-    roster: [
-      { name: 'Bodyweight Pull-Ups', target: '4 sets × Max Reps', note: 'Structural endurance & postural reset' },
-      { name: 'Incline Dumbbell Press', target: '3 sets × 10-12 reps', note: 'Upper clavicular pectoral target' },
-      { name: 'Chest-Supported Rows', target: '3 sets × 12 reps', note: 'Rear deltoid and rhomboid scapular retraction' },
-      { name: 'Cable Lateral Raises', target: '4 sets × 15 reps', note: 'Constant tension lateral shoulder sweep' },
-      { name: 'Isolated Wrist Curls', target: '3 sets × 20 reps', note: 'Pronator and flexor mass building' }
-    ]
+    roster: UPPER_BODY_ROSTER
+  },
+  'Sunday': {
+    title: 'Lower Body, Abs & Cardio — Endocrine Activation & Leaning',
+    color: 'border-emerald-500/40 text-emerald-400',
+    accentColor: '#34d399',
+    roster: LOWER_BODY_ROSTER
+  },
+  'Thursday': {
+    title: 'Lower Body, Abs & Cardio — Endocrine Activation & Leaning',
+    color: 'border-emerald-500/40 text-emerald-400',
+    accentColor: '#34d399',
+    roster: LOWER_BODY_ROSTER
   },
   'Tuesday': {
-    title: 'Active Functional Recovery — Postural Calibration & CNS Reset',
+    title: 'Active Recovery — Postural Calibration & Core Stability',
     color: 'border-amber-500/40 text-amber-400',
     accentColor: '#fbbf24',
     roster: [
-      { name: 'Low-Intensity Steady State (LISS) Walking', target: '30-40 Minutes', note: 'Fat oxidation & active recovery window' },
-      { name: 'Deep Core Isometric Planks', target: '3 sets × 60s holds', note: 'Transverse abdominis stabilization' },
-      { name: 'Spinal Decompression & Postural Drills', target: 'Daily Protocol', note: 'Tissue mobilization and chest opening' }
+      { name: 'Light Treadmill Walking', target: '20-30 Mins', note: 'CNS down-regulation & fat wash' },
+      { name: 'Steady Cycling', target: '15-20 Mins', note: 'Lactic acid clearance & leg flushing' },
+      { name: 'Postural Activation: Bird-Dog Exercise', target: '3 sets × 10 reps/side', note: 'Scapular & glute cross-stabilizer' },
+      { name: 'Core Endurance: Forearm Core Planks', target: '3 sets × 45-60s hold', note: 'Static transverse core brace conditioning' },
+      { name: 'Decompression Flow: Cobra Stretch & Cat-Cow', target: '5-10 Mins', note: 'Spine mobilizing & lumbar extension' }
     ]
   },
   'Wednesday': {
-    title: 'Active Functional Recovery — Postural Calibration & CNS Reset',
+    title: 'Active Recovery — Spinal Decompression & Tissue Repair',
     color: 'border-amber-500/40 text-amber-400',
     accentColor: '#fbbf24',
     roster: [
-      { name: 'Low-Intensity Steady State (LISS) Walking', target: '30-40 Minutes', note: 'CNS decompression & dynamic recovery' },
-      { name: 'Deep Core Isometric Planks', target: '3 sets × 60s holds', note: 'Core stabilizer activation' },
-      { name: 'Spinal Decompression & Postural Drills', target: 'Daily Protocol', note: 'Soft tissue mobilization and thoracic mobility' }
-    ]
-  },
-  'Thursday': {
-    title: 'Lower Body, Abs & Cardio (B) — Posterior Chain & Hypertrophy',
-    color: 'border-emerald-500/40 text-emerald-400',
-    accentColor: '#34d399',
-    roster: [
-      { name: 'Goblet or Front Squats', target: '3 sets × 10-12 reps', note: 'Quad load dominance and core stability' },
-      { name: 'Heavy Romanian Deadlifts (RDLs)', target: '4 sets × 8 reps', note: 'Posterior hinge progression' },
-      { name: 'Leg Press / Bulgarian Split Squat variations', target: '3 sets × 10 reps', note: 'Unilateral quad and glute focus' },
-      { name: 'Seated Calf Raises', target: '4 sets × 12 reps', note: 'Soleus expansion & ankle mobility' },
-      { name: 'Decline Ab Crunches', target: '3 sets × 15 reps', note: 'Rectus abdominis overload' },
-      { name: 'Cardio Finisher: Run & Cycle Steady State', target: 'LISS Protocol', note: 'Glycogen depletion and recovery acceleration' }
+      { name: 'Light Treadmill Walking', target: '20-30 Mins', note: 'Low-impact recovery blood circulation' },
+      { name: 'Steady Cycling', target: '15-20 Mins', note: 'Joint articulation & active recovery' },
+      { name: 'Spinal Decompression Flow', target: '5 Mins', note: 'Cobra Stretch & Cat-Cow dynamic flow' },
+      { name: 'Full-Body Flexibility', target: '10 Mins', note: "Child's Pose & Hamstring Stretch static holds" }
     ]
   },
   'Friday': {
-    title: 'Absolute Nervous System Restoration — Peak Protein Synthesis Window',
+    title: 'Absolute Rest — Nervous System Restoration',
     color: 'border-rose-500/40 text-rose-400',
     accentColor: '#f43f5e',
     roster: [
-      { name: 'Zero Physical Exercise', target: 'Rest Focus', note: 'Nervous system recalibration & tissue remodeling' },
-      { name: 'Nutrition Directive: Amino Acid Baseline', target: '4 Whole Eggs', note: 'Healthy fats, zinc, and muscle building blocks' },
-      { name: 'Total Protein Target', target: '130 - 140 grams', note: 'To support muscle recovery and synthesis' }
+      { name: 'Zero Physical Exercise', target: 'Rest Focus', note: 'Nervous system recalibration & muscle tissue remodeling' },
+      { name: 'Nutrition Directive: Amino Acid Baseline', target: '4 Whole Eggs', note: 'Healthy fats, minerals, and muscle building blocks' },
+      { name: 'Total Protein Target', target: '130 - 140 grams', note: 'Achieve precise muscle synthesis recovery target' }
     ]
+  }
+};
+
+const HELP_GLOSSARY = {
+  'biometrics': {
+    title: 'Pre-Workout vs. Post-Workout Weight (Biometric Fluid Trend)',
+    simpleMeaning: 'Your weight right before you start training versus right after you finish your workout/cardio.',
+    whyItMatters: 'The drop shows how much sweat/water your body flushed out during the session. It helps track how hard your metabolism is working and prevents dehydration. Tracking this ensures you stay properly hydrated post-session.'
+  },
+  'volume': {
+    title: 'Training Volume Load (Progressive Overload)',
+    simpleMeaning: 'The total weight lifted multiplied by the total repetitions completed (Weight × Total Reps).',
+    whyItMatters: 'To build an aesthetic V-Taper, your muscles need to do slightly more work over time. If your volume line is going up week-by-week, you are successfully forcing your body to grow and adapt. It represents the absolute overload stimulus.'
+  },
+  'vTaper': {
+    title: 'V-Taper Ratio Metrics (Pull-Ups & Lateral Raises)',
+    simpleMeaning: 'Tracking how much work your back (Pull-Ups) and side shoulders (Dumbbell Lateral Raises) are doing.',
+    whyItMatters: 'These are the two specific muscle groups that make your shoulders look broader and your waist look narrower, carving out that classic aesthetic, athletic physique.'
   }
 };
 
@@ -140,17 +162,22 @@ export default function Dashboard() {
     maxSquatVol: 0
   });
 
+  // Help Modal State
+  const [helpModal, setHelpModal] = useState({
+    isOpen: false,
+    title: '',
+    simpleMeaning: '',
+    whyItMatters: ''
+  });
+
   const googleFormLink = "https://docs.google.com/forms/d/e/1FAIpQLSdVNfNAvYbliACRYzgkozkfvKB-bonPel-7J8TSKcaxPjAIHQ/viewform?usp=send_form";
   const embedFormLink = "https://docs.google.com/forms/d/e/1FAIpQLSdVNfNAvYbliACRYzgkozkfvKB-bonPel-7J8TSKcaxPjAIHQ/viewform?embedded=true";
 
   useEffect(() => {
-    // Discover local day
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const currentDayName = days[new Date().getDay()];
     setTodayName(currentDayName);
     setActiveTab(currentDayName);
-
-    // Fetch data
     fetchWorkoutData();
   }, []);
 
@@ -163,7 +190,6 @@ export default function Dashboard() {
       
       setData(workoutData);
 
-      // Compute statistics
       if (workoutData.length > 0) {
         const lastRecord = workoutData[workoutData.length - 1];
         
@@ -206,7 +232,22 @@ export default function Dashboard() {
     }));
   };
 
-  // Custom tooltips for graphs
+  const openExplanation = (key) => {
+    const item = HELP_GLOSSARY[key];
+    if (item) {
+      setHelpModal({
+        isOpen: true,
+        title: item.title,
+        simpleMeaning: item.simpleMeaning,
+        whyItMatters: item.whyItMatters
+      });
+    }
+  };
+
+  const closeExplanation = () => {
+    setHelpModal(prev => ({ ...prev, isOpen: false }));
+  };
+
   const CustomBiometricTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -244,21 +285,59 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500 selection:text-slate-950">
       <Head>
-        <title>V-Taper Physique Analytics & Biometrics Command Center</title>
-        <meta name="description" content="Production-grade dark-mode physique optimization metrics pipeline & active scheduler." />
+        <title>Ishrar's Fitness Tracker</title>
+        <meta name="description" content="Beginner-friendly dark-mode fitness tracking architecture & biometric analytics." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      {/* Interactive Explanation Modal */}
+      {helpModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl animate-scale-up">
+            <button 
+              onClick={closeExplanation}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-200 transition-colors p-1.5 hover:bg-slate-850 rounded-lg cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex items-start gap-3 mt-2">
+              <div className="bg-sky-950 border border-sky-850 text-sky-400 p-2 rounded-xl shrink-0 mt-0.5">
+                <Info className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black tracking-tight text-slate-100 pr-6">
+                  {helpModal.title}
+                </h3>
+                <div className="mt-4 flex flex-col gap-4">
+                  <div>
+                    <h4 className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono mb-1">Simple Explanation</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/40 p-3 rounded-lg border border-slate-850">
+                      {helpModal.simpleMeaning}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono mb-1">Why it matters</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed bg-sky-950/10 p-3 rounded-lg border border-sky-950/40">
+                      {helpModal.whyItMatters}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Header Area */}
-      <header className="relative border-b border-slate-900 bg-slate-950/60 backdrop-blur-md sticky top-0 z-50 py-4 px-6 md:px-12">
+      <header className="relative border-b border-slate-900 bg-slate-950/60 backdrop-blur-md sticky top-0 z-40 py-4 px-6 md:px-12">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold font-mono">Mission Control Active</span>
+              <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold font-mono">Biometric Terminal Ready</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-slate-200 to-sky-400">
-              V-TAPER PHYSIQUE OPTIMIZATION SYSTEM
+              ISHRAR'S FITNESS TRACKER
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
               5-Month Physique Design Protocol: <span className="text-sky-400">V-Taper targeting</span> • <span className="text-emerald-400 font-medium">Core leaning</span> • <span className="text-amber-500">Postural calibration</span>
@@ -272,7 +351,7 @@ export default function Dashboard() {
               className="flex items-center gap-2 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 hover:border-slate-700 py-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-300 active:scale-95 disabled:opacity-50"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>REFRESH METRICS</span>
+              <span>SYNC TELEMETRY</span>
             </button>
             <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-right hidden sm:block">
               <div className="text-[10px] text-slate-500 font-mono font-bold uppercase">System Time</div>
@@ -289,81 +368,117 @@ export default function Dashboard() {
         
         {/* Dynamic High-Density Metric Grid */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all">
+          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all relative group">
             <div className="flex items-center justify-between text-slate-500">
               <span className="text-[10px] font-bold tracking-widest uppercase">Pre-Weight</span>
-              <Activity className="h-4 w-4 text-sky-400" />
+              <button 
+                onClick={() => openExplanation('biometrics')}
+                className="text-slate-500 hover:text-sky-400 p-0.5 rounded cursor-pointer transition-colors"
+                title="Explain parameter"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-3">
               <div className="text-2xl md:text-3xl font-black tracking-tight text-sky-400">
                 {loading ? '---' : `${stats.lastPreWeight || '0'} kg`}
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Last measured baseline</p>
+              <p className="text-[10px] text-slate-400 mt-1">Starting Body weight</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all">
+          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all relative group">
             <div className="flex items-center justify-between text-slate-500">
               <span className="text-[10px] font-bold tracking-widest uppercase">Post-Weight</span>
-              <Droplet className="h-4 w-4 text-amber-500" />
+              <button 
+                onClick={() => openExplanation('biometrics')}
+                className="text-slate-500 hover:text-amber-500 p-0.5 rounded cursor-pointer transition-colors"
+                title="Explain parameter"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-3">
               <div className="text-2xl md:text-3xl font-black tracking-tight text-amber-500">
                 {loading ? '---' : `${stats.lastPostWeight || '0'} kg`}
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Post-workout baseline</p>
+              <p className="text-[10px] text-slate-400 mt-1">Post-workout weight</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all">
+          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all relative group">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[10px] font-bold tracking-widest uppercase">Fluid Volatility</span>
-              <Flame className="h-4 w-4 text-emerald-400" />
+              <span className="text-[10px] font-bold tracking-widest uppercase">Sweat Loss</span>
+              <button 
+                onClick={() => openExplanation('biometrics')}
+                className="text-slate-500 hover:text-emerald-400 p-0.5 rounded cursor-pointer transition-colors"
+                title="Explain parameter"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-3">
               <div className={`text-2xl md:text-3xl font-black tracking-tight ${stats.weightDiff < 0 ? 'text-emerald-400' : 'text-slate-300'}`}>
                 {loading ? '---' : `${stats.weightDiff > 0 ? '+' : ''}${stats.weightDiff} kg`}
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Acute sweating shift</p>
+              <p className="text-[10px] text-slate-400 mt-1">Acute fluid volatility</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all">
+          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all relative group">
             <div className="flex items-center justify-between text-slate-500">
               <span className="text-[10px] font-bold tracking-widest uppercase">Max Pull-up Vol</span>
-              <Dumbbell className="h-4 w-4 text-sky-400" />
+              <button 
+                onClick={() => openExplanation('vTaper')}
+                className="text-slate-500 hover:text-sky-400 p-0.5 rounded cursor-pointer transition-colors"
+                title="Explain parameter"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-3">
               <div className="text-2xl md:text-3xl font-black tracking-tight text-sky-400">
                 {loading ? '---' : `${stats.maxPullUpVol.toLocaleString()} kg`}
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Peak load target</p>
+              <p className="text-[10px] text-slate-400 mt-1">Back overload peak</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all">
+          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all relative group">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[10px] font-bold tracking-widest uppercase">Max Chest Vol</span>
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
+              <span className="text-[10px] font-bold tracking-widest uppercase">Max Side-Delt Vol</span>
+              <button 
+                onClick={() => openExplanation('vTaper')}
+                className="text-slate-500 hover:text-emerald-400 p-0.5 rounded cursor-pointer transition-colors"
+                title="Explain parameter"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-3">
               <div className="text-2xl md:text-3xl font-black tracking-tight text-emerald-400">
                 {loading ? '---' : `${stats.maxBenchVol.toLocaleString()} kg`}
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Pressing volume peak</p>
+              <p className="text-[10px] text-slate-400 mt-1">Pressing/Lateral peak</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all">
+          <div className="bg-slate-900/60 border border-slate-850 rounded-xl p-4 flex flex-col justify-between hover:border-slate-800 transition-all relative group">
             <div className="flex items-center justify-between text-slate-500">
               <span className="text-[10px] font-bold tracking-widest uppercase">Max Squat Vol</span>
-              <Sparkles className="h-4 w-4 text-purple-400" />
+              <button 
+                onClick={() => openExplanation('volume')}
+                className="text-slate-500 hover:text-purple-400 p-0.5 rounded cursor-pointer transition-colors"
+                title="Explain parameter"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-3">
               <div className="text-2xl md:text-3xl font-black tracking-tight text-purple-400">
                 {loading ? '---' : `${stats.maxSquatVol.toLocaleString()} kg`}
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Posterior overdrive peak</p>
+              <p className="text-[10px] text-slate-400 mt-1">Posterior chain peak</p>
             </div>
           </div>
         </section>
@@ -374,91 +489,128 @@ export default function Dashboard() {
           {/* LEFT COLUMN: PANE 1 & PANE 3 */}
           <div className="lg:col-span-8 flex flex-col gap-8">
             
-            {/* PANE 1: BIOMETRIC ANALYTICS ENGINE */}
+            {/* PANE 1: BEGINNER-FRIENDLY VISUALIZATION ENGINE */}
             <section className="bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-sky-400" />
-                    PANE 1: BIOMETRIC FLUID VOLATILITY GRAPH
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Water balance drop post-session to monitor fat oxidation speeds, system water loss, and true dry metabolic mass.
-                  </p>
+              
+              {/* Chart 1: Sweat & Fluid Loss Chart */}
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-sky-400" />
+                      SWEAT & FLUID LOSS CHART (BIOMETRIC FLUID TREND)
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Visualizes weight changes before and after workouts to audit hydration and cardiovascular pacing.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => openExplanation('biometrics')}
+                    className="flex items-center gap-1 text-[10px] text-sky-400 hover:text-sky-300 font-mono bg-sky-950/40 border border-sky-900/40 py-1 px-2.5 rounded-lg cursor-pointer"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>EXPLAIN CHART</span>
+                  </button>
                 </div>
-              </div>
 
-              {/* Chart 1: Biometric Fluid Volatility */}
-              <div className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative">
-                {loading ? (
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-mono">
-                    <div className="flex flex-col items-center gap-2">
-                      <RefreshCw className="h-6 w-6 animate-spin text-sky-400" />
-                      <span>Syncing Biometric Matrix...</span>
+                <div 
+                  onClick={() => openExplanation('biometrics')}
+                  className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative cursor-pointer hover:border-slate-850/80 transition-all group"
+                  title="Click to view full scientific explanation"
+                >
+                  <div className="absolute top-2 right-2 bg-slate-900/80 border border-slate-850 text-[9px] font-mono text-slate-500 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    Click to explain chart variables
+                  </div>
+                  {loading ? (
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-mono">
+                      <div className="flex flex-col items-center gap-2">
+                        <RefreshCw className="h-6 w-6 animate-spin text-sky-400" />
+                        <span>Syncing Biometric Matrix...</span>
+                      </div>
                     </div>
-                  </div>
-                ) : error ? (
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-rose-400 font-mono">
-                    {error}
-                  </div>
-                ) : data.length === 0 ? (
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
-                    No biometric entries recorded yet.
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#64748b" 
-                        fontSize={10} 
-                        tickLine={false} 
-                      />
-                      <YAxis 
-                        stroke="#64748b" 
-                        fontSize={10} 
-                        tickLine={false}
-                        domain={['dataMin - 1', 'dataMax + 1']} 
-                      />
-                      <Tooltip content={<CustomBiometricTooltip />} />
-                      <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
-                      <Line 
-                        name="Pre-Workout Mass (kg)"
-                        type="monotone" 
-                        dataKey="preWeight" 
-                        stroke="#38bdf8" 
-                        strokeWidth={2.5}
-                        dot={{ r: 3, strokeWidth: 1 }}
-                        activeDot={{ r: 5 }}
-                      />
-                      <Line 
-                        name="Post-Workout Mass (kg)"
-                        type="monotone" 
-                        dataKey="postWeight" 
-                        stroke="#f59e0b" 
-                        strokeWidth={2.5}
-                        dot={{ r: 3, strokeWidth: 1 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
+                  ) : error ? (
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-rose-400 font-mono">
+                      {error}
+                    </div>
+                  ) : data.length === 0 ? (
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
+                      No biometric entries recorded yet.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#64748b" 
+                          fontSize={10} 
+                          tickLine={false} 
+                        />
+                        <YAxis 
+                          stroke="#64748b" 
+                          fontSize={10} 
+                          tickLine={false}
+                          domain={['dataMin - 1', 'dataMax + 1']} 
+                        />
+                        <Tooltip content={<CustomBiometricTooltip />} />
+                        <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
+                        <Line 
+                          name="Pre-Workout Weight (kg)"
+                          type="monotone" 
+                          dataKey="preWeight" 
+                          stroke="#38bdf8" 
+                          strokeWidth={2.5}
+                          dot={{ r: 3, strokeWidth: 1 }}
+                          activeDot={{ r: 5 }}
+                        />
+                        <Line 
+                          name="Post-Workout Weight (kg)"
+                          type="monotone" 
+                          dataKey="postWeight" 
+                          stroke="#f59e0b" 
+                          strokeWidth={2.5}
+                          dot={{ r: 3, strokeWidth: 1 }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+                <div className="bg-slate-950/30 border border-slate-900 px-4 py-3 rounded-lg text-slate-400 text-xs flex items-center gap-2">
+                  <span className="font-semibold text-sky-400 uppercase font-mono text-[9px] bg-sky-950/50 border border-sky-900/40 px-1.5 py-0.5 rounded">Core Logic</span>
+                  <span><strong>Fluid Loss Correlation:</strong> Post-session drop reveals acute sweating volume relative to total calorie output. Compare weights above to measure training hydration needs.</span>
+                </div>
               </div>
 
-              {/* Chart 2: Progressive Overload Tracker */}
-              <div className="flex flex-col gap-2 mt-4">
-                <div>
-                  <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-emerald-400" />
-                    PROGRESSIVE OVERLOAD STIMULUS ENGINE
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Verification of training performance trajectory based on calculated absolute Volume Load (Weight × Repetitions).
-                  </p>
+              {/* Chart 2: Muscle Strength Progress Chart */}
+              <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-slate-850/60">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-emerald-400" />
+                      MUSCLE STRENGTH PROGRESS CHART (TRAINING VOLUME TRACKER)
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Monitors overload performance metrics over time to verify systematic physical enhancements.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => openExplanation('volume')}
+                    className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-mono bg-emerald-950/40 border border-emerald-900/40 py-1 px-2.5 rounded-lg cursor-pointer"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>EXPLAIN OVERLOAD</span>
+                  </button>
                 </div>
 
-                <div className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative mt-2">
+                <div 
+                  onClick={() => openExplanation('volume')}
+                  className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative cursor-pointer hover:border-slate-850/80 transition-all group"
+                  title="Click to view overload explanation"
+                >
+                  <div className="absolute top-2 right-2 bg-slate-900/80 border border-slate-850 text-[9px] font-mono text-slate-500 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    Click to explain overload progression
+                  </div>
                   {loading ? (
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-mono">
                       <div className="flex flex-col items-center gap-2">
@@ -536,6 +688,10 @@ export default function Dashboard() {
                     </ResponsiveContainer>
                   )}
                 </div>
+                <div className="bg-slate-950/30 border border-slate-900 px-4 py-3 rounded-lg text-slate-400 text-xs flex items-center gap-2">
+                  <span className="font-semibold text-emerald-400 uppercase font-mono text-[9px] bg-emerald-950/50 border border-emerald-900/40 px-1.5 py-0.5 rounded">Core Logic</span>
+                  <span><strong>Trajectory Analysis:</strong> Upward spikes confirm progressive overload development. Aim to increase the volume profiles weekly to support long-term muscular hypertrophy.</span>
+                </div>
               </div>
             </section>
 
@@ -566,9 +722,12 @@ export default function Dashboard() {
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-black text-slate-100 mb-4 tracking-tight">
-                    {ROUTINES[todayName]?.title}
+                  <h3 className="text-xl font-black text-slate-100 mb-2 tracking-tight">
+                    {ROUTINES[todayName]?.title.split(' — ')[0]}
                   </h3>
+                  <p className="text-xs text-slate-400 mb-4 italic">
+                    {ROUTINES[todayName]?.title.split(' — ')[1]}
+                  </p>
 
                   <div className="flex flex-col gap-3">
                     {ROUTINES[todayName]?.roster.map((ex, index) => (
@@ -580,7 +739,7 @@ export default function Dashboard() {
                           </span>
                           <span className="text-[10px] text-slate-500 mt-0.5">{ex.note}</span>
                         </div>
-                        <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/20 border border-emerald-900/20 px-2.5 py-0.5 rounded-md">
+                        <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/20 border border-emerald-900/20 px-2.5 py-0.5 rounded-md shrink-0 ml-4">
                           {ex.target}
                         </span>
                       </div>
@@ -647,7 +806,7 @@ export default function Dashboard() {
                                 <span className="text-xs font-bold text-slate-200">{ex.name}</span>
                                 <span className="text-[10px] text-slate-500 mt-0.5">{ex.note}</span>
                               </div>
-                              <span className="text-[11px] font-mono font-bold text-slate-400">
+                              <span className="text-[11px] font-mono font-bold text-slate-400 shrink-0 ml-4">
                                 {ex.target}
                               </span>
                             </div>
@@ -683,7 +842,7 @@ export default function Dashboard() {
                 rel="noopener noreferrer" 
                 className="w-full bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 hover:from-sky-400 hover:to-emerald-400 p-3.5 rounded-xl font-black text-center text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-300 shadow-lg hover:shadow-sky-500/10 cursor-pointer active:scale-98"
               >
-                <span>LOG LATEST METRICS — LAUNCH INPUT PORTAL</span>
+                <span>LOG LATEST METRICS — LAUNCH PORTAL</span>
                 <ExternalLink className="h-4 w-4" />
               </a>
 
@@ -719,7 +878,7 @@ export default function Dashboard() {
 
       {/* Footer System Branding */}
       <footer className="border-t border-slate-900/60 bg-slate-950/40 py-6 px-6 mt-16 text-center text-slate-500 text-[10px] font-mono tracking-widest uppercase max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <span>© 2026 PHYSIQUE DEPLOYMENT ARCHITECTURE. ALL SYSTEM SYSTEMS GO.</span>
+        <span>© 2026 ISHRAR'S FITNESS TRACKER. ALL SYSTEMS ACTIVE.</span>
         <span className="text-sky-500/60 flex items-center gap-1 text-[9px]">
           <Heart className="h-3 w-3 fill-current text-rose-500" />
           OPTIMIZED METRIC DEPLOYMENT
