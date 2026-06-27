@@ -31,8 +31,13 @@ import {
   RefreshCw,
   HelpCircle,
   X,
-  Info
+  Info,
+  Camera,
+  Scan,
+  Maximize2,
+  MoveHorizontal
 } from 'lucide-react';
+import PhysiqueTracker from '../components/PhysiqueTracker';
 
 const WEEKDAYS = [
   { day: 'Sunday', key: 'Sunday', title: "Lower Body, Abs & Cardio — Endocrine Activation & Leaning" },
@@ -162,6 +167,9 @@ export default function Dashboard() {
     maxSquatVol: 0
   });
 
+  const [dashboardView, setDashboardView] = useState('telemetry'); // 'telemetry' or 'physique'
+  const [systemTime, setSystemTime] = useState('');
+
   // Help Modal State
   const [helpModal, setHelpModal] = useState({
     isOpen: false,
@@ -178,6 +186,7 @@ export default function Dashboard() {
     const currentDayName = days[new Date().getDay()];
     setTodayName(currentDayName);
     setActiveTab(currentDayName);
+    setSystemTime(new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }));
     fetchWorkoutData();
   }, []);
 
@@ -356,7 +365,7 @@ export default function Dashboard() {
             <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-right hidden sm:block">
               <div className="text-[10px] text-slate-500 font-mono font-bold uppercase">System Time</div>
               <div className="text-xs font-mono font-bold text-slate-300">
-                {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                {systemTime || '---'}
               </div>
             </div>
           </div>
@@ -489,211 +498,245 @@ export default function Dashboard() {
           {/* LEFT COLUMN: PANE 1 & PANE 3 */}
           <div className="lg:col-span-8 flex flex-col gap-8">
             
-            {/* PANE 1: BEGINNER-FRIENDLY VISUALIZATION ENGINE */}
-            <section className="bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col gap-6">
-              
-              {/* Chart 1: Sweat & Fluid Loss Chart */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-sky-400" />
-                      SWEAT & FLUID LOSS CHART (BIOMETRIC FLUID TREND)
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Visualizes weight changes before and after workouts to audit hydration and cardiovascular pacing.
-                    </p>
+            {/* Dashboard Sub-View Navigation Tabs */}
+            <div className="flex border-b border-slate-900 bg-slate-900/10 p-1 rounded-xl gap-2 self-start">
+              <button
+                onClick={() => setDashboardView('telemetry')}
+                className={`px-4 py-2 rounded-lg text-xs font-black tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                  dashboardView === 'telemetry'
+                    ? 'bg-gradient-to-r from-sky-500/15 to-emerald-500/15 border border-sky-500/30 text-sky-400 shadow-md shadow-sky-950/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/30 border border-transparent'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5" />
+                  Telemetry Charts
+                </span>
+              </button>
+              <button
+                onClick={() => setDashboardView('physique')}
+                className={`px-4 py-2 rounded-lg text-xs font-black tracking-wider uppercase transition-all duration-305 cursor-pointer ${
+                  dashboardView === 'physique'
+                    ? 'bg-gradient-to-r from-sky-500/15 to-emerald-500/15 border border-sky-500/30 text-sky-400 shadow-md shadow-sky-950/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/30 border border-transparent'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Camera className="h-3.5 w-3.5" />
+                  Physique Progress & AI Coach
+                </span>
+              </button>
+            </div>
+
+            {dashboardView === 'telemetry' ? (
+              /* PANE 1: BEGINNER-FRIENDLY VISUALIZATION ENGINE */
+              <section className="bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col gap-6">
+                
+                {/* Chart 1: Sweat & Fluid Loss Chart */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
+                        <Activity className="h-5 w-5 text-sky-400" />
+                        SWEAT & FLUID LOSS CHART (BIOMETRIC FLUID TREND)
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Visualizes weight changes before and after workouts to audit hydration and cardiovascular pacing.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => openExplanation('biometrics')}
+                      className="flex items-center gap-1 text-[10px] text-sky-400 hover:text-sky-300 font-mono bg-sky-950/40 border border-sky-900/40 py-1 px-2.5 rounded-lg cursor-pointer"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      <span>EXPLAIN CHART</span>
+                    </button>
                   </div>
-                  <button 
+
+                  <div 
                     onClick={() => openExplanation('biometrics')}
-                    className="flex items-center gap-1 text-[10px] text-sky-400 hover:text-sky-300 font-mono bg-sky-950/40 border border-sky-900/40 py-1 px-2.5 rounded-lg cursor-pointer"
+                    className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative cursor-pointer hover:border-slate-850/80 transition-all group"
+                    title="Click to view full scientific explanation"
                   >
-                    <HelpCircle className="h-3.5 w-3.5" />
-                    <span>EXPLAIN CHART</span>
-                  </button>
-                </div>
-
-                <div 
-                  onClick={() => openExplanation('biometrics')}
-                  className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative cursor-pointer hover:border-slate-850/80 transition-all group"
-                  title="Click to view full scientific explanation"
-                >
-                  <div className="absolute top-2 right-2 bg-slate-900/80 border border-slate-850 text-[9px] font-mono text-slate-500 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                    Click to explain chart variables
-                  </div>
-                  {loading ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-mono">
-                      <div className="flex flex-col items-center gap-2">
-                        <RefreshCw className="h-6 w-6 animate-spin text-sky-400" />
-                        <span>Syncing Biometric Matrix...</span>
+                    <div className="absolute top-2 right-2 bg-slate-900/80 border border-slate-850 text-[9px] font-mono text-slate-500 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to explain chart variables
+                    </div>
+                    {loading ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-mono">
+                        <div className="flex flex-col items-center gap-2">
+                          <RefreshCw className="h-6 w-6 animate-spin text-sky-400" />
+                          <span>Syncing Biometric Matrix...</span>
+                        </div>
                       </div>
-                    </div>
-                  ) : error ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-rose-400 font-mono">
-                      {error}
-                    </div>
-                  ) : data.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
-                      No biometric entries recorded yet.
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
-                        <XAxis 
-                          dataKey="date" 
-                          stroke="#64748b" 
-                          fontSize={10} 
-                          tickLine={false} 
-                        />
-                        <YAxis 
-                          stroke="#64748b" 
-                          fontSize={10} 
-                          tickLine={false}
-                          domain={['dataMin - 1', 'dataMax + 1']} 
-                        />
-                        <Tooltip content={<CustomBiometricTooltip />} />
-                        <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
-                        <Line 
-                          name="Pre-Workout Weight (kg)"
-                          type="monotone" 
-                          dataKey="preWeight" 
-                          stroke="#38bdf8" 
-                          strokeWidth={2.5}
-                          dot={{ r: 3, strokeWidth: 1 }}
-                          activeDot={{ r: 5 }}
-                        />
-                        <Line 
-                          name="Post-Workout Weight (kg)"
-                          type="monotone" 
-                          dataKey="postWeight" 
-                          stroke="#f59e0b" 
-                          strokeWidth={2.5}
-                          dot={{ r: 3, strokeWidth: 1 }}
-                          activeDot={{ r: 5 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-                <div className="bg-slate-950/30 border border-slate-900 px-4 py-3 rounded-lg text-slate-400 text-xs flex items-center gap-2">
-                  <span className="font-semibold text-sky-400 uppercase font-mono text-[9px] bg-sky-950/50 border border-sky-900/40 px-1.5 py-0.5 rounded">Core Logic</span>
-                  <span><strong>Fluid Loss Correlation:</strong> Post-session drop reveals acute sweating volume relative to total calorie output. Compare weights above to measure training hydration needs.</span>
-                </div>
-              </div>
-
-              {/* Chart 2: Muscle Strength Progress Chart */}
-              <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-slate-850/60">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-emerald-400" />
-                      MUSCLE STRENGTH PROGRESS CHART (TRAINING VOLUME TRACKER)
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Monitors overload performance metrics over time to verify systematic physical enhancements.
-                    </p>
+                    ) : error ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-rose-400 font-mono">
+                        {error}
+                      </div>
+                    ) : data.length === 0 ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
+                        No biometric entries recorded yet.
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                          <XAxis 
+                            dataKey="date" 
+                            stroke="#64748b" 
+                            fontSize={10} 
+                            tickLine={false} 
+                          />
+                          <YAxis 
+                            stroke="#64748b" 
+                            fontSize={10} 
+                            tickLine={false}
+                            domain={['dataMin - 1', 'dataMax + 1']} 
+                          />
+                          <Tooltip content={<CustomBiometricTooltip />} />
+                          <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
+                          <Line 
+                            name="Pre-Workout Weight (kg)"
+                            type="monotone" 
+                            dataKey="preWeight" 
+                            stroke="#38bdf8" 
+                            strokeWidth={2.5}
+                            dot={{ r: 3, strokeWidth: 1 }}
+                            activeDot={{ r: 5 }}
+                          />
+                          <Line 
+                            name="Post-Workout Weight (kg)"
+                            type="monotone" 
+                            dataKey="postWeight" 
+                            stroke="#f59e0b" 
+                            strokeWidth={2.5}
+                            dot={{ r: 3, strokeWidth: 1 }}
+                            activeDot={{ r: 5 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
-                  <button 
+                  <div className="bg-slate-950/30 border border-slate-900 px-4 py-3 rounded-lg text-slate-400 text-xs flex items-center gap-2">
+                    <span className="font-semibold text-sky-400 uppercase font-mono text-[9px] bg-sky-950/50 border border-sky-900/40 px-1.5 py-0.5 rounded">Core Logic</span>
+                    <span><strong>Fluid Loss Correlation:</strong> Post-session drop reveals acute sweating volume relative to total calorie output. Compare weights above to measure training hydration needs.</span>
+                  </div>
+                </div>
+
+                {/* Chart 2: Muscle Strength Progress Chart */}
+                <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-slate-850/60">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-emerald-400" />
+                        MUSCLE STRENGTH PROGRESS CHART (TRAINING VOLUME TRACKER)
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Monitors overload performance metrics over time to verify systematic physical enhancements.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => openExplanation('volume')}
+                      className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-mono bg-emerald-950/40 border border-emerald-900/40 py-1 px-2.5 rounded-lg cursor-pointer"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      <span>EXPLAIN OVERLOAD</span>
+                    </button>
+                  </div>
+
+                  <div 
                     onClick={() => openExplanation('volume')}
-                    className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-mono bg-emerald-950/40 border border-emerald-900/40 py-1 px-2.5 rounded-lg cursor-pointer"
+                    className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative cursor-pointer hover:border-slate-850/80 transition-all group"
+                    title="Click to view overload explanation"
                   >
-                    <HelpCircle className="h-3.5 w-3.5" />
-                    <span>EXPLAIN OVERLOAD</span>
-                  </button>
-                </div>
-
-                <div 
-                  onClick={() => openExplanation('volume')}
-                  className="h-72 w-full bg-slate-950/40 rounded-xl border border-slate-850 p-4 relative cursor-pointer hover:border-slate-850/80 transition-all group"
-                  title="Click to view overload explanation"
-                >
-                  <div className="absolute top-2 right-2 bg-slate-900/80 border border-slate-850 text-[9px] font-mono text-slate-500 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                    Click to explain overload progression
-                  </div>
-                  {loading ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-mono">
-                      <div className="flex flex-col items-center gap-2">
-                        <RefreshCw className="h-6 w-6 animate-spin text-emerald-400" />
-                        <span>Aggregating Volume Matrix...</span>
+                    <div className="absolute top-2 right-2 bg-slate-900/80 border border-slate-850 text-[9px] font-mono text-slate-500 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to explain overload progression
+                    </div>
+                    {loading ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-mono">
+                        <div className="flex flex-col items-center gap-2">
+                          <RefreshCw className="h-6 w-6 animate-spin text-emerald-400" />
+                          <span>Aggregating Volume Matrix...</span>
+                        </div>
                       </div>
-                    </div>
-                  ) : error ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-rose-400 font-mono">
-                      {error}
-                    </div>
-                  ) : data.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
-                      No overload metrics recorded yet.
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorSquat" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorPullUp" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorBench" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#a855f7" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
-                        <XAxis 
-                          dataKey="date" 
-                          stroke="#64748b" 
-                          fontSize={10} 
-                          tickLine={false}
-                        />
-                        <YAxis 
-                          stroke="#64748b" 
-                          fontSize={10} 
-                          tickLine={false}
-                        />
-                        <Tooltip content={<CustomVolumeTooltip />} />
-                        <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
-                        <Area 
-                          name="Squat Volume" 
-                          type="monotone" 
-                          dataKey="squatVolume" 
-                          stroke="#10b981" 
-                          fillOpacity={1} 
-                          fill="url(#colorSquat)" 
-                          strokeWidth={2}
-                        />
-                        <Area 
-                          name="Pull-Up Volume" 
-                          type="monotone" 
-                          dataKey="pullUpVolume" 
-                          stroke="#38bdf8" 
-                          fillOpacity={1} 
-                          fill="url(#colorPullUp)" 
-                          strokeWidth={2}
-                        />
-                        <Area 
-                          name="Chest Press Volume" 
-                          type="monotone" 
-                          dataKey="benchVolume" 
-                          stroke="#a855f7" 
-                          fillOpacity={1} 
-                          fill="url(#colorBench)" 
-                          strokeWidth={2}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  )}
+                    ) : error ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-rose-400 font-mono">
+                        {error}
+                      </div>
+                    ) : data.length === 0 ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
+                        No overload metrics recorded yet.
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorSquat" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorPullUp" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2}/>
+                              <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorBench" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#a855f7" stopOpacity={0.2}/>
+                              <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                          <XAxis 
+                            dataKey="date" 
+                            stroke="#64748b" 
+                            fontSize={10} 
+                            tickLine={false}
+                          />
+                          <YAxis 
+                            stroke="#64748b" 
+                            fontSize={10} 
+                            tickLine={false}
+                          />
+                          <Tooltip content={<CustomVolumeTooltip />} />
+                          <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                          <Area 
+                            name="Squat Volume" 
+                            type="monotone" 
+                            dataKey="squatVolume" 
+                            stroke="#10b981" 
+                            fillOpacity={1} 
+                            fill="url(#colorSquat)" 
+                            strokeWidth={2}
+                          />
+                          <Area 
+                            name="Pull-Up Volume" 
+                            type="monotone" 
+                            dataKey="pullUpVolume" 
+                            stroke="#38bdf8" 
+                            fillOpacity={1} 
+                            fill="url(#colorPullUp)" 
+                            strokeWidth={2}
+                          />
+                          <Area 
+                            name="Chest Press Volume" 
+                            type="monotone" 
+                            dataKey="benchVolume" 
+                            stroke="#a855f7" 
+                            fillOpacity={1} 
+                            fill="url(#colorBench)" 
+                            strokeWidth={2}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                  <div className="bg-slate-950/30 border border-slate-900 px-4 py-3 rounded-lg text-slate-400 text-xs flex items-center gap-2">
+                    <span className="font-semibold text-emerald-400 uppercase font-mono text-[9px] bg-emerald-950/50 border border-emerald-900/40 px-1.5 py-0.5 rounded">Core Logic</span>
+                    <span><strong>Trajectory Analysis:</strong> Upward spikes confirm progressive overload development. Aim to increase the volume profiles weekly to support long-term muscular hypertrophy.</span>
+                  </div>
                 </div>
-                <div className="bg-slate-950/30 border border-slate-900 px-4 py-3 rounded-lg text-slate-400 text-xs flex items-center gap-2">
-                  <span className="font-semibold text-emerald-400 uppercase font-mono text-[9px] bg-emerald-950/50 border border-emerald-900/40 px-1.5 py-0.5 rounded">Core Logic</span>
-                  <span><strong>Trajectory Analysis:</strong> Upward spikes confirm progressive overload development. Aim to increase the volume profiles weekly to support long-term muscular hypertrophy.</span>
-                </div>
-              </div>
-            </section>
+              </section>
+            ) : (
+              <PhysiqueTracker data={data} loading={loading} error={error} />
+            )}
 
             {/* PANE 3: CHRONO-ALIGNED DYNAMIC TRAINING SCHEDULE */}
             <section className="bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col gap-6">

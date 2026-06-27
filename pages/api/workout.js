@@ -47,6 +47,7 @@ export default async function handler(req, res) {
     let benchIdx = 8;
     let lateralIdx = 11;
     let squatsIdx = 15;
+    let photoIdx = 24;
 
     // Perform dynamic header check to adjust indices based on actual spreadsheet column order
     if (cols.length > 0) {
@@ -65,6 +66,7 @@ export default async function handler(req, res) {
       const foundBench = findColIdx(['dumbbell bench press', 'bench press', 'chest press']);
       const foundLateral = findColIdx(['dumbbell lateral raises', 'lateral raises', 'lateral raise']);
       const foundSquats = findColIdx(['weighted squats', 'squats', 'squat']);
+      const foundPhoto = findColIdx(['physique progress photo', 'progress photo', 'physique photo', 'daily physique progress photo', 'photo']);
 
       // Only re-map if we successfully find key headers (avoids false overrides on mock tests)
       if (foundPre !== -1 && foundPost !== -1) {
@@ -76,6 +78,7 @@ export default async function handler(req, res) {
         if (foundBench !== -1) benchIdx = foundBench;
         if (foundLateral !== -1) lateralIdx = foundLateral;
         if (foundSquats !== -1) squatsIdx = foundSquats;
+        if (foundPhoto !== -1) photoIdx = foundPhoto;
       }
     }
 
@@ -176,6 +179,7 @@ export default async function handler(req, res) {
       const benchVolume = parseVolume(cells[benchIdx]);
       const lateralVolume = parseVolume(cells[lateralIdx]);
       const squatVolume = parseVolume(cells[squatsIdx]);
+      const photoUrl = parseStringVal(cells[photoIdx]);
 
       return {
         date,
@@ -185,7 +189,8 @@ export default async function handler(req, res) {
         pullUpVolume,
         benchVolume,
         lateralVolume,
-        squatVolume
+        squatVolume,
+        photoUrl
       };
     }).filter(Boolean);
 
