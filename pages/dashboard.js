@@ -167,7 +167,7 @@ export default function Dashboard() {
     maxSquatVol: 0
   });
 
-  const [dashboardView, setDashboardView] = useState('telemetry'); // 'telemetry' or 'physique'
+  const [dashboardView, setDashboardView] = useState('physique'); // default to 'physique' visual tracker
   const [systemTime, setSystemTime] = useState('');
 
   // Help Modal State
@@ -492,41 +492,37 @@ export default function Dashboard() {
           </div>
         </section>
 
+        {/* Dashboard Sub-View Navigation Selector */}
+        <div className="bg-slate-900/40 border border-slate-850 p-1.5 rounded-2xl flex gap-3 max-w-md w-full sm:w-auto self-start">
+          <button
+            onClick={() => setDashboardView('telemetry')}
+            className={`flex-1 py-3 px-5 rounded-xl text-xs font-black tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
+              dashboardView === 'telemetry'
+                ? 'bg-gradient-to-r from-sky-500/20 to-emerald-500/20 border border-sky-500/40 text-sky-400 shadow-lg shadow-sky-950/50'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40 border border-transparent'
+            }`}
+          >
+            <Activity className="h-4 w-4" />
+            <span>Telemetry Charts</span>
+          </button>
+          <button
+            onClick={() => setDashboardView('physique')}
+            className={`flex-1 py-3 px-5 rounded-xl text-xs font-black tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
+              dashboardView === 'physique'
+                ? 'bg-gradient-to-r from-sky-500/20 to-emerald-500/20 border border-sky-500/40 text-sky-400 shadow-lg shadow-sky-950/50'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40 border border-transparent'
+            }`}
+          >
+            <Camera className="h-4 w-4 animate-pulse" />
+            <span>Physique & AI Coach</span>
+          </button>
+        </div>
+
         {/* Dashboard Panels */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* LEFT COLUMN: PANE 1 & PANE 3 */}
           <div className="lg:col-span-8 flex flex-col gap-8">
-            
-            {/* Dashboard Sub-View Navigation Tabs */}
-            <div className="flex border-b border-slate-900 bg-slate-900/10 p-1 rounded-xl gap-2 self-start">
-              <button
-                onClick={() => setDashboardView('telemetry')}
-                className={`px-4 py-2 rounded-lg text-xs font-black tracking-wider uppercase transition-all duration-300 cursor-pointer ${
-                  dashboardView === 'telemetry'
-                    ? 'bg-gradient-to-r from-sky-500/15 to-emerald-500/15 border border-sky-500/30 text-sky-400 shadow-md shadow-sky-950/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/30 border border-transparent'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <Activity className="h-3.5 w-3.5" />
-                  Telemetry Charts
-                </span>
-              </button>
-              <button
-                onClick={() => setDashboardView('physique')}
-                className={`px-4 py-2 rounded-lg text-xs font-black tracking-wider uppercase transition-all duration-305 cursor-pointer ${
-                  dashboardView === 'physique'
-                    ? 'bg-gradient-to-r from-sky-500/15 to-emerald-500/15 border border-sky-500/30 text-sky-400 shadow-md shadow-sky-950/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/30 border border-transparent'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <Camera className="h-3.5 w-3.5" />
-                  Physique Progress & AI Coach
-                </span>
-              </button>
-            </div>
 
             {dashboardView === 'telemetry' ? (
               /* PANE 1: BEGINNER-FRIENDLY VISUALIZATION ENGINE */
