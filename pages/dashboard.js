@@ -35,9 +35,142 @@ import {
   Camera,
   Scan,
   Maximize2,
-  MoveHorizontal
+  MoveHorizontal,
+  Award
 } from 'lucide-react';
 import PhysiqueTracker from '../components/PhysiqueTracker';
+
+// Dynamic AI Coach feedback synthesis engine
+const generateAICoachFeedback = (record, allRecords = [], currentIndex = 0) => {
+  if (!record) return {
+    willpowerAnalysis: 'Initializing cognitive matrix...',
+    cnsAnalysis: 'Aggregating nervous system telemetry...',
+    progressionAnalysis: 'Auditing progressive overload coefficients...',
+    critique: 'Calibrating critic logs...',
+    quote: 'Consistently logging metrics is the foundational habit of elite athletes.',
+    sweatLoss: 0,
+    totalVol: 0
+  };
+
+  const comment = record.comment || '';
+  const preWeight = record.preWeight || 0;
+  const postWeight = record.postWeight || 0;
+  const sweatLoss = preWeight && postWeight ? (preWeight - postWeight).toFixed(1) : 0;
+  const routine = record.routine || '';
+  
+  // Find the previous record of the same routine category to compare lift volumes
+  let prevRecord = null;
+  if (allRecords.length > 0 && currentIndex > 0) {
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (allRecords[i] && allRecords[i].routine === routine) {
+        prevRecord = allRecords[i];
+        break;
+      }
+    }
+  }
+
+  let willpowerAnalysis = "";
+  let cnsAnalysis = "";
+  let progressionAnalysis = "";
+  let critique = "";
+  let quote = "";
+
+  const text = comment.toLowerCase();
+  
+  // 1. Willpower & Social/Dietary Audit
+  if (text.includes('drink') || text.includes('alcohol') || text.includes('peg') || text.includes('vodka') || text.includes('wedding')) {
+    const isVodka = text.includes('vodka') || text.includes('peg');
+    const isWedding = text.includes('wedding');
+    const controlled = text.includes('controlled') || text.includes('proud');
+    
+    if (isVodka) {
+      willpowerAnalysis = "WARNING: System compromise detected via alcohol (vodka) ingestion. Ethanol molecules act as an acute central nervous system depressant, slowing down motor neuron recruitment. Physiologically, alcohol blocks Muscle Protein Synthesis (MPS) via down-regulation of the mTOR pathway, and severely disrupts deep REM sleep—the primary window for natural Growth Hormone (GH) release. This session's hypertrophy adaptation was closed. Directive: Stop all alcohol intake. Consume 600mg Magnesium Bisglycinate and 1.5L of mineralized water to assist liver filtration, and do not train under active systemic dehydration.";
+      quote = "Alcohol is a direct toxin to hypertrophy. Choose between vodka pegs or a narrow waistline. You cannot build state-of-the-art aesthetics on ethanol.";
+    } else if (isWedding && controlled) {
+      willpowerAnalysis = "WILLPOWER CHAMPION: Resisting alcohol cravings at the wedding is a significant psychological and hormonal victory. By keeping ethanol out of your system, you avoided testosterone suppression and protected your liver's gluconeogenesis capability. However, event dinners are highly caloric and protein-deficient. Directive: Offset high-fat wedding foods by targeting a strict 140g protein ceiling tomorrow and adding a 20-minute post-session incline walk (Zone 2 cardio) to clear glycogen overflow.";
+      quote = "Aesthetic mastery requires ignoring social pressure. The mental reward of resisting that drink beats any temporary buzz.";
+    } else {
+      willpowerAnalysis = "BIO-ENERGY AUDIT: Social event logged. Resisting cravings keeps your insulin sensitivity high and prevents central nervous system fatigue. Continue protecting the liver and kidney filtration pathways.";
+      quote = "Hormones rule hypertrophy. Keeping clean ensures optimal test-to-cortisol ratios.";
+    }
+  } else if (text.includes('guilt') || text.includes('jummah') || text.includes('missed') || text.includes('hectic')) {
+    willpowerAnalysis = "PSYCHO-MOTIVATIONAL AUDIT: You logged intense guilt after missing Jummah or a training session due to a hectic schedule. Guilt causes an increase in serum cortisol (the stress hormone), which is highly catabolic and breaks down muscle tissue. Turn this negative emotional drive into physical leverage. Rest days are NOT failures—they allow joint lubrication, glycogen supercompensation, and nervous system replenishment. Directive: Take 3g of L-Tyrosine to restore dopamine pre-workout and channel the mental stress directly into your next compound lift. Increase your target workload by 2.5kg.";
+    quote = "Emotional friction is high-voltage energy. Do not let it sit and build cortisol; burn it through heavy compound lifts.";
+  } else if (text.includes('proud') || text.includes('completed') || text.includes('strong') || text.includes('pump') || text.includes('heavy')) {
+    willpowerAnalysis = "DOPAMINE REWIRING SUCCESS: Positive reinforcement triggered. The brain is successfully associating rigorous tracking and lift completion with physical accomplishment rather than cheap calorie rewards. Your nervous system is primed for progressive overload. Directive: Capitalize on this neural feedback loop. Tomorrow, challenge yourself by squeezing out 1-2 extra partial reps at the end of your main working sets.";
+    quote = "Aesthetic pride is earned in the hypertrophy trenches. Harness this drive for your next training session.";
+  } else {
+    willpowerAnalysis = "PSYCHOLOGICAL STANCE: Baseline operational focus. Hydration is stable and tracking habits are consistent. Maintaining records is the key distinction between chaotic training and aesthetic progression.";
+    quote = "Discipline is the bridge between aesthetic dreams and physical results. Stay consistent.";
+  }
+
+  // 2. CNS, Fatigue, and Hydration Audit
+  const notesLower = record.notes ? record.notes.toLowerCase() : '';
+  const prePostDiff = record.preWeight && record.postWeight ? (record.preWeight - record.postWeight).toFixed(1) : 0;
+  
+  if (notesLower.includes('sleep') || notesLower.includes('rest') || notesLower.includes('tired') || notesLower.includes('fatigue')) {
+    cnsAnalysis = "CNS STATUS: Rest-Priority Override Active. Skipping or modifying training to secure sleep is correct. Training on less than 6 hours of sleep raises cortisol, suppresses testosterone, and lowers the nervous system's capacity to recruit high-threshold motor units. Joint injury risks increase by 300%. Directive: Secure a minimum of 8 hours of sleep tonight. Take 300mg potassium and load 5g creatine to maintain cellular hydration.";
+  } else if (notesLower.includes('football') || notesLower.includes('match') || notesLower.includes('cardio')) {
+    cnsAnalysis = "CNS STATUS: Glycogen Depletion Alert. Playing a 1-hour high-intensity football match represents a significant anaerobic/HIIT cardio block. This depletes quadriceps and calf glycogen stores and inflicts eccentric damage on your joints. Directive: Defer heavy leg squats for at least 48 hours to avoid patellar tendonitis. Focus instead on light accessory extensions, calf stretching, and consume 100g of clean carbohydrates with your next meal to reload leg glycogen.";
+  } else if (prePostDiff > 1.2) {
+    cnsAnalysis = `CNS STATUS: Cellular Dehydration State. You lost ${prePostDiff}kg of fluid mass during this session. A 2% loss in fluid reduces muscle contractile force by 10-15% and increases fatigue. Directive: Drink 1.5L of water mixed with 1/4 tsp sodium and a pinch of potassium immediately to restore intramuscular water balance and cell volume.`;
+  } else {
+    cnsAnalysis = `CNS STATUS: Optimal Hydration. Pre-to-post session fluid shift is minimal (${prePostDiff}kg lost). Intramuscular pressure is stable. Perfect conditions for maximum muscle pumps.`;
+  }
+
+  // 3. Overload & Progression Critique
+  const totalVol = (record.pullUpVolume || 0) + (record.benchVolume || 0) + (record.squatVolume || 0) + (record.lateralVolume || 0) + (record.accessoryVolume || 0);
+  
+  if (prevRecord) {
+    const prevTotalVol = (prevRecord.pullUpVolume || 0) + (prevRecord.benchVolume || 0) + (prevRecord.squatVolume || 0) + (prevRecord.lateralVolume || 0) + (prevRecord.accessoryVolume || 0);
+    const volDiff = totalVol - prevTotalVol;
+    const volPct = prevTotalVol > 0 ? ((volDiff / prevTotalVol) * 100).toFixed(1) : '0';
+    const isOverload = totalVol > prevTotalVol;
+
+    let liftDetails = [];
+    if (record.benchVolume > 0 && prevRecord.benchVolume > 0) {
+      const diff = record.benchVolume - prevRecord.benchVolume;
+      const pct = ((diff / prevRecord.benchVolume) * 100).toFixed(1);
+      liftDetails.push(`Dumbbell Bench: ${record.benchVolume.toLocaleString()} vs ${prevRecord.benchVolume.toLocaleString()} kg (${diff >= 0 ? '+' : ''}${pct}%)`);
+    }
+    if (record.squatVolume > 0 && prevRecord.squatVolume > 0) {
+      const diff = record.squatVolume - prevRecord.squatVolume;
+      const pct = ((diff / prevRecord.squatVolume) * 100).toFixed(1);
+      liftDetails.push(`Squats: ${record.squatVolume.toLocaleString()} vs ${prevRecord.squatVolume.toLocaleString()} kg (${diff >= 0 ? '+' : ''}${pct}%)`);
+    }
+    if (record.pullUpVolume > 0 && prevRecord.pullUpVolume > 0) {
+      const diff = record.pullUpVolume - prevRecord.pullUpVolume;
+      const pct = ((diff / prevRecord.pullUpVolume) * 100).toFixed(1);
+      liftDetails.push(`Pull-ups: ${record.pullUpVolume.toLocaleString()} vs ${prevRecord.pullUpVolume.toLocaleString()} kg (${diff >= 0 ? '+' : ''}${pct}%)`);
+    }
+    if (record.lateralVolume > 0 && prevRecord.lateralVolume > 0) {
+      const diff = record.lateralVolume - prevRecord.lateralVolume;
+      const pct = ((diff / prevRecord.lateralVolume) * 100).toFixed(1);
+      liftDetails.push(`Lateral Raises: ${record.lateralVolume.toLocaleString()} vs ${prevRecord.lateralVolume.toLocaleString()} kg (${diff >= 0 ? '+' : ''}${pct}%)`);
+    }
+
+    if (isOverload) {
+      progressionAnalysis = `HYPERTROPHY TELEMETRY: Overload progression confirmed compared to last split session on ${prevRecord.date}. Total load increased by ${volDiff.toLocaleString()} kg·rep (+${volPct}%). Lift metrics: ${liftDetails.join(' | ') || 'None'}.`;
+      critique = `DIRECTIVE: You successfully drove progressive overload. The muscle fibers underwent micro-tears necessary for adaptation. For your next session, increase the dumbbell weight by 1.25kg on your primary sets and focus on an explosive concentric contraction (1 second up).`;
+    } else {
+      progressionAnalysis = `HYPERTROPHY TELEMETRY: Volume load is flat or reduced compared to last split on ${prevRecord.date} (${totalVol.toLocaleString()} vs ${prevTotalVol.toLocaleString()} kg·rep, a change of ${volPct}%). Lift metrics: ${liftDetails.join(' | ') || 'None'}.`;
+      critique = `DIRECTIVE: Workload fell below threshold. Stalling indicates potential central fatigue or nutrition deficits. Next session, decrease set count by 1 but increase weight, focusing strictly on high intensity (RPE 9-10) to stimulate the nervous system.`;
+    }
+  } else {
+    progressionAnalysis = `HYPERTROPHY TELEMETRY: Initial volume baseline set at ${totalVol.toLocaleString()} kg·rep. Accessories contributed ${(record.accessoryVolume || 0).toLocaleString()} kg·rep.`;
+    critique = "DIRECTIVE: Establish a stable strength foundation. In the next session of this split, your sole objective is to add exactly 1 repetition to your final set of each exercise to initiate the overload loop.";
+  }
+
+  return {
+    willpowerAnalysis,
+    cnsAnalysis,
+    progressionAnalysis,
+    critique,
+    quote,
+    sweatLoss,
+    totalVol
+  };
+};
 
 const WEEKDAYS = [
   { day: 'Sunday', key: 'Sunday', title: "Lower Body, Abs & Cardio — Endocrine Activation & Leaning" },
@@ -166,11 +299,12 @@ export default function Dashboard() {
     maxBenchVol: 0,
     maxSquatVol: 0
   });
-
   const [dashboardView, setDashboardView] = useState('physique'); // default to 'physique' visual tracker
+  const [showAccessories, setShowAccessories] = useState(false);
+  const [selectedDay, setSelectedDay] = useState('Saturday');
+  const [completedExercises, setCompletedExercises] = useState({});
   const [systemTime, setSystemTime] = useState('');
-
-  // Help Modal State
+  const [selectedCoachRecordIdx, setSelectedCoachRecordIdx] = useState(null);
   const [helpModal, setHelpModal] = useState({
     isOpen: false,
     title: '',
@@ -224,6 +358,7 @@ export default function Dashboard() {
           maxBenchVol: maxBench,
           maxSquatVol: maxSquat
         });
+        setSelectedCoachRecordIdx(workoutData.length - 1);
       }
       setError(null);
     } catch (err) {
@@ -493,7 +628,7 @@ export default function Dashboard() {
         </section>
 
         {/* Dashboard Sub-View Navigation Selector */}
-        <div className="bg-slate-900/40 border border-slate-850 p-1.5 rounded-2xl flex gap-3 max-w-md w-full sm:w-auto self-start">
+        <div className="bg-slate-900/40 border border-slate-850 p-1.5 rounded-2xl flex flex-wrap gap-2 max-w-lg w-full sm:w-auto self-start">
           <button
             onClick={() => setDashboardView('telemetry')}
             className={`flex-1 py-3 px-5 rounded-xl text-xs font-black tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
@@ -514,7 +649,18 @@ export default function Dashboard() {
             }`}
           >
             <Camera className="h-4 w-4 animate-pulse" />
-            <span>Physique & AI Coach</span>
+            <span>Physique Scanner</span>
+          </button>
+          <button
+            onClick={() => setDashboardView('coach')}
+            className={`flex-1 py-3 px-5 rounded-xl text-xs font-black tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
+              dashboardView === 'coach'
+                ? 'bg-gradient-to-r from-sky-500/20 to-emerald-500/20 border border-sky-500/40 text-sky-400 shadow-lg shadow-sky-950/50'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40 border border-transparent'
+            }`}
+          >
+            <Sparkles className="h-4 w-4 animate-pulse" />
+            <span>AI Coach & Journal</span>
           </button>
         </div>
 
@@ -523,6 +669,224 @@ export default function Dashboard() {
           
           {/* LEFT COLUMN: PANE 1 & PANE 3 */}
           <div className="lg:col-span-8 flex flex-col gap-8">
+
+            {dashboardView === 'coach' && (
+              /* PANE 4: AI HEALTH COACH & DAILY CHRONO JOURNAL */
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-fade-in w-full">
+                
+                {/* 1. Left Side: AI Coach Panel (7 columns of sub-grid) */}
+                <div className="md:col-span-7 flex flex-col gap-6">
+                  {selectedCoachRecordIdx !== null && data[selectedCoachRecordIdx] ? (
+                    (() => {
+                      const record = data[selectedCoachRecordIdx];
+                      const analysis = generateAICoachFeedback(record, data, selectedCoachRecordIdx);
+                      return (
+                        <div className="bg-gradient-to-r from-slate-900 to-slate-950 border border-slate-850 rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col gap-5">
+                          <div className="absolute top-0 right-0 h-48 w-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                          
+                          {/* Header */}
+                          <div className="flex justify-between items-center flex-wrap gap-2">
+                            <span className="bg-emerald-950 border border-emerald-850 text-emerald-400 px-3 py-1 rounded-full text-[9px] font-bold font-mono tracking-widest uppercase flex items-center gap-1.5">
+                              <Sparkles className="h-3 w-3 animate-pulse" />
+                              AI Coach Diagnostic Console
+                            </span>
+                            <span className="text-xs font-mono font-bold text-slate-400">
+                              Logged: {record.date}
+                            </span>
+                          </div>
+
+                          {/* Selected Day Info */}
+                          <div className="border-b border-slate-850 pb-3">
+                            <h3 className="text-base font-black text-slate-100">{record.routine || 'Rest / Recovery Session'}</h3>
+                            <p className="text-[10px] text-slate-550 mt-1 font-mono uppercase tracking-wide">
+                              Routine Category: {record.routine ? record.routine.split(' — ')[0] : 'Rest'}
+                            </p>
+                          </div>
+
+                          {/* Mental Journal Section */}
+                          {record.comment && (
+                            <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-xl relative">
+                              <span className="absolute -top-2.5 left-3 px-2 py-0.5 bg-slate-900 border border-slate-800 text-[8px] font-mono font-bold text-slate-400 rounded uppercase tracking-wider">
+                                Daily Thoughts & Notes
+                              </span>
+                              <p className="text-xs text-slate-300 italic leading-relaxed pt-1">
+                                "{record.comment}"
+                              </p>
+                            </div>
+                          )}
+
+                          {/* AI Willpower & Psychology Audit */}
+                          <div className="flex items-start gap-3 p-4 rounded-xl border border-sky-950/40 bg-sky-950/10">
+                            <div className="bg-sky-900 border border-sky-850 text-sky-400 p-2 rounded-lg shrink-0 mt-0.5">
+                              <Award className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-sky-455 font-mono font-bold">Psychological & Diet Audit</h4>
+                              <p className="text-xs text-slate-300 leading-relaxed font-medium mt-1">
+                                {analysis.willpowerAnalysis}
+                              </p>
+                              <p className="text-[10px] text-slate-500 italic mt-1.5 border-t border-sky-950/40 pt-1.5 font-mono">
+                                Coach stance: "{analysis.quote}"
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* CNS & Recovery Audit */}
+                          <div className="flex items-start gap-3 p-4 rounded-xl border border-emerald-950/40 bg-emerald-950/10">
+                            <div className="bg-emerald-900 border border-emerald-850 text-emerald-400 p-2 rounded-lg shrink-0 mt-0.5">
+                              <Activity className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-emerald-455 font-mono font-bold">CNS & Recovery Telemetry</h4>
+                              <p className="text-xs text-slate-300 leading-relaxed font-medium mt-1">
+                                {analysis.cnsAnalysis}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Training Overload Audit */}
+                          <div className="flex items-start gap-3 p-4 rounded-xl border border-purple-950/40 bg-purple-950/10">
+                            <div className="bg-purple-900 border border-purple-850 text-purple-400 p-2 rounded-lg shrink-0 mt-0.5">
+                              <Dumbbell className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col gap-1 w-full">
+                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-purple-455 font-mono font-bold">Overload Progression Audit</h4>
+                              <p className="text-xs text-slate-300 leading-relaxed font-medium mt-1">
+                                {analysis.progressionAnalysis}
+                              </p>
+                              <p className="text-xs text-amber-300 leading-relaxed font-medium mt-2.5 border-t border-purple-900/40 pt-2.5">
+                                {analysis.critique}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Active day volume loads */}
+                          <div className="grid grid-cols-2 gap-4 border-t border-slate-850/60 pt-4">
+                            <div>
+                              <span className="text-[10px] text-slate-550 font-mono uppercase tracking-widest block font-bold">Core Load Volume</span>
+                              <span className="text-base font-black text-slate-200 block mt-0.5">
+                                {(record.pullUpVolume + record.benchVolume + record.squatVolume + record.lateralVolume).toLocaleString()} kg·rep
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-555 font-mono uppercase tracking-widest block font-bold">Accessory Load Volume</span>
+                              <span className="text-base font-black text-amber-500 block mt-0.5">
+                                {(record.accessoryVolume || 0).toLocaleString()} kg·rep
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Parsed Accessory Exercises Detail List */}
+                          {record.accessories && record.accessories.length > 0 && (
+                            <div className="border-t border-slate-850/60 pt-4 flex flex-col gap-3">
+                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-slate-400 font-mono">Parsed Accessory Load Telemetry</h4>
+                              <div className="flex flex-col gap-2">
+                                {record.accessories.map((acc, aIdx) => (
+                                  <div key={aIdx} className="bg-slate-950/40 border border-slate-900 rounded-lg p-2.5 flex items-center justify-between hover:border-slate-800 transition-colors">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs font-bold text-slate-200">{acc.name}</span>
+                                      <span className="text-[9px] text-slate-505 font-mono uppercase font-bold">{acc.category} group</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs font-mono font-bold text-amber-400">{acc.raw}</span>
+                                      <span className="text-[9px] text-slate-500 block font-mono">Vol: {acc.volume.toLocaleString()} kg·rep</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="bg-slate-900/40 border border-slate-850 rounded-2xl p-12 text-center text-xs text-slate-500 font-mono flex flex-col items-center gap-3">
+                      <Sparkles className="h-8 w-8 text-slate-600 animate-pulse" />
+                      <span>Select any day from the Journal Timeline to analyze metrics...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Right Side: Chrono Journal Log Timeline (5 columns of sub-grid) */}
+                <div className="md:col-span-5 flex flex-col gap-4">
+                  <div className="bg-slate-900/60 border border-slate-850 rounded-2xl p-4 flex flex-col gap-4 max-h-[700px] overflow-hidden">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-350 font-bold">
+                        Chrono Journal Timeline
+                      </h4>
+                      <p className="text-[9px] text-slate-500 mt-0.5">
+                        Select a logged day card to audit feedback.
+                      </p>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto pr-1 no-scrollbar flex flex-col gap-3">
+                      {data
+                        .slice()
+                        .reverse()
+                        .map((record, index) => {
+                          const idx = data.indexOf(record);
+                          const isSelected = idx === selectedCoachRecordIdx;
+                          const hasComment = !!record.comment;
+                          
+                          let statusLabel = "Rest / Recovery";
+                          let labelColor = "text-slate-400 bg-slate-950/40 border-slate-850/60";
+                          
+                          if (record.routine) {
+                            statusLabel = "Training Split";
+                            labelColor = "text-sky-400 bg-sky-950/20 border-sky-900/30";
+                          }
+                          
+                          if (record.comment) {
+                            const txt = record.comment.toLowerCase();
+                            if (txt.includes('wedding') || txt.includes('drink') || txt.includes('controlled')) {
+                              statusLabel = "Willpower Win 🏆";
+                              labelColor = "text-amber-400 bg-amber-950/20 border-amber-900/30";
+                            } else if (txt.includes('guilt') || txt.includes('missed') || txt.includes('jummah')) {
+                              statusLabel = "Willpower Leak ⚠️";
+                              labelColor = "text-rose-400 bg-rose-950/20 border-rose-900/30";
+                            }
+                          }
+
+                          return (
+                            <div
+                              key={index}
+                              onClick={() => setSelectedCoachRecordIdx(idx)}
+                              className={`p-3 rounded-xl border transition-all duration-300 cursor-pointer flex flex-col gap-2 relative overflow-hidden select-none ${
+                                isSelected
+                                  ? 'border-sky-500/50 bg-sky-950/10 shadow-lg shadow-sky-950/20'
+                                  : 'border-slate-850 bg-slate-950/20 hover:border-slate-800 hover:bg-slate-900/40'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <span className="text-[10px] font-mono font-bold text-slate-400">
+                                  {record.date}
+                                </span>
+                                <span className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-md border ${labelColor}`}>
+                                  {statusLabel}
+                                </span>
+                              </div>
+
+                              <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                                {hasComment ? `"${record.comment}"` : <span className="text-slate-605 italic">[No training comment logged]</span>}
+                              </p>
+
+                              {record.accessories && record.accessories.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1 border-t border-slate-900/60 pt-2">
+                                  {record.accessories.map((a, aIdx) => (
+                                    <span key={aIdx} className="text-[8px] font-mono font-bold text-slate-500 bg-slate-950/50 px-1.5 py-0.5 rounded border border-slate-850/60">
+                                      {a.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {dashboardView === 'telemetry' ? (
               /* PANE 1: BEGINNER-FRIENDLY VISUALIZATION ENGINE */
@@ -730,12 +1094,13 @@ export default function Dashboard() {
                   </div>
                 </div>
               </section>
-            ) : (
+            ) : dashboardView === 'physique' ? (
               <PhysiqueTracker data={data} loading={loading} error={error} />
-            )}
+            ) : null}
 
             {/* PANE 3: CHRONO-ALIGNED DYNAMIC TRAINING SCHEDULE */}
-            <section className="bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col gap-6">
+            {dashboardView !== 'coach' && (
+              <section className="bg-slate-900/40 border border-slate-850 rounded-2xl p-6 flex flex-col gap-6">
               <div>
                 <h2 className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-emerald-400" />
@@ -857,6 +1222,7 @@ export default function Dashboard() {
                 })}
               </div>
             </section>
+            )}
           </div>
 
           {/* RIGHT COLUMN: PANE 2 - INTEGRATED DATA CAPTURE */}

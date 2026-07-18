@@ -47,6 +47,7 @@ export default async function handler(req, res) {
     let benchIdx = 8;
     let lateralIdx = 11;
     let squatsIdx = 15;
+    let notesIdx = 23;
     let photoIdx = 24;
 
     // Perform dynamic header check to adjust indices based on actual spreadsheet column order
@@ -66,6 +67,7 @@ export default async function handler(req, res) {
       const foundBench = findColIdx(['dumbbell bench press', 'bench press', 'chest press']);
       const foundLateral = findColIdx(['dumbbell lateral raises', 'lateral raises', 'lateral raise']);
       const foundSquats = findColIdx(['weighted squats', 'squats', 'squat']);
+      const foundNotes = findColIdx(['session notes', 'notes', 'notes / rpe', 'submission notes']);
       const foundPhoto = findColIdx(['physique progress photo', 'progress photo', 'physique photo', 'daily physique progress photo', 'photo']);
 
       // Only re-map if we successfully find key headers (avoids false overrides on mock tests)
@@ -78,6 +80,7 @@ export default async function handler(req, res) {
         if (foundBench !== -1) benchIdx = foundBench;
         if (foundLateral !== -1) lateralIdx = foundLateral;
         if (foundSquats !== -1) squatsIdx = foundSquats;
+        if (foundNotes !== -1) notesIdx = foundNotes;
         if (foundPhoto !== -1) photoIdx = foundPhoto;
       }
     }
@@ -180,6 +183,98 @@ export default async function handler(req, res) {
       const lateralVolume = parseVolume(cells[lateralIdx]);
       const squatVolume = parseVolume(cells[squatsIdx]);
       const photoUrl = parseStringVal(cells[photoIdx]);
+      const notes = parseStringVal(cells[notesIdx]);
+
+      // Parse accessories from notes
+      let accessoryVolume = 0;
+      const accessories = [];
+      const keywords = [];
+
+      const getCategory = (exName) => {
+        const n = exName.toLowerCase();
+        
+        // 1. Legs (check legs before general terms like "press" or "extension")
+        if (n.includes('leg press') || n.includes('squat') || n.includes('leg extension') || 
+            n.includes('leg curl') || n.includes('calf') || n.includes('rdl') || 
+            n.includes('lunge') || n.includes('quad') || n.includes('hamstring') || n.includes('calf') || n.includes('calves')) {
+          return 'legs';
+        }
+        
+        // 2. Arms (check arm curls and pushdowns before other categories)
+        if (n.includes('bicep') || n.includes('tricep') || n.includes('curl') || 
+            n.includes('hammer') || n.includes('pushdown') || n.includes('kickback') || 
+            n.includes('wrist') || n.includes('forearm') || n.includes('arm')) {
+          return 'arms';
+        }
+        
+        // 3. Shoulders
+        if (n.includes('lateral') || n.includes('delt') || n.includes('face pull') || 
+            n.includes('face-pull') || n.includes('shoulder') || n.includes('overhead press') || 
+            n.includes('ohp') || n.includes('military press') || n.includes('shrug')) {
+          return 'shoulders';
+        }
+        
+        // 4. Chest
+        if (n.includes('bench') || n.includes('chest') || n.includes('flye') || 
+            n.includes('flys') || n.includes('flyes') || n.includes('push-up') || n.includes('pushup') || 
+            (n.includes('press') && !n.includes('leg') && !n.includes('shoulder') && !n.includes('overhead'))) {
+          return 'chest';
+        }
+        
+        // 5. Back
+        if (n.includes('pull-up') || n.includes('pullup') || n.includes('pulldown') || 
+            n.includes('row') || n.includes('chin-up') || n.includes('chinup') || 
+            n.includes('deadlift') || n.includes('lat') || n.includes('back')) {
+          return 'back';
+        }
+        
+        // 6. Core
+        if (n.includes('belly') || n.includes('crunch') || n.includes('plank') || 
+            n.includes('sit-up') || n.includes('situp') || n.includes('abs') || 
+            n.includes('core') || (n.includes('raise') && !n.includes('lateral'))) {
+          return 'core';
+        }
+        
+        return 'other';
+      };
+
+      // Match any exercise name followed by - or : and sets/reps (e.g. Leg Press - 100/15/15/15)
+      const exerciseRegex = /([a-zA-Z0-9\s&()'+/\\]+?)\s*[:\-]\s*([\d.]+(?:\s*[\/|\\]\s*[\d.]+)+)/gi;
+      let match;
+      const parsedMatches = [];
+      while ((match = exerciseRegex.exec(notes)) !== null) {
+        let name = match[1].trim();
+        // Strip leading comma, dot or spaces from name
+        name = name.replace(/^[^a-zA-Z0-9]+/, '').trim();
+        const rawValues = match[2].trim();
+        const volume = parseVolume(rawValues);
+        const category = getCategory(name);
+        
+        accessoryVolume += volume;
+        accessories.push({ name, volume, raw: rawValues, category });
+        parsedMatches.push(match[0]);
+      }
+
+      // Remove all matched exercise log patterns from notes to isolate pure personal journal entries
+      let comment = notes;
+      parsedMatches.forEach(m => {
+        comment = comment.replace(m, '');
+      });
+      // Clean up punctuation leftovers
+      comment = comment
+        .replace(/^[,\s\-:.]+/, '') 
+        .replace(/[,\s\-:.]+$/, '') 
+        .replace(/\s*,\s*,/g, ',')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Check for recovery keywords
+      const KEYWORDS = ['Steam Bath', 'Trainer Swaps', 'Sauna', 'Spa', 'Pool', 'Stretch', 'Cardio Extra'];
+      KEYWORDS.forEach(kw => {
+        if (notes.toLowerCase().includes(kw.toLowerCase())) {
+          keywords.push(kw);
+        }
+      });
 
       return {
         date,
@@ -190,7 +285,12 @@ export default async function handler(req, res) {
         benchVolume,
         lateralVolume,
         squatVolume,
-        photoUrl
+        photoUrl,
+        notes,
+        comment,
+        accessoryVolume,
+        accessories,
+        keywords
       };
     }).filter(Boolean);
 
