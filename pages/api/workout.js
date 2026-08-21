@@ -1,302 +1,251 @@
-import { es } from 'es-toolkit'; // Just in case, but standard JS fetch is fine
-
 export default async function handler(req, res) {
   try {
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/1Crarq7CMIQMjzwA3fTsSDiCVTSP-5JbF3qWNlxpfuxY/gviz/tq?tqx=out:json';
-    
+    const sheetUrl =
+      'https://docs.google.com/spreadsheets/d/1Crarq7CMIQMjzwA3fTsSDiCVTSP-5JbF3qWNlxpfuxY/gviz/tq?tqx=out:json';
+
     const response = await fetch(sheetUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch Google Sheet data: ${response.statusText}`);
-    }
+    if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
 
     const text = await response.text();
-    
-    // Strip google.visualization.Query.setResponse( ... );
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}') + 1;
-    if (jsonStart === -1 || jsonEnd === -1) {
-      throw new Error('Invalid Google Sheet JSON format');
-    }
-    
-    const jsonString = text.substring(jsonStart, jsonEnd);
-    const data = JSON.parse(jsonString);
+    if (jsonStart === -1) throw new Error('Invalid sheet format');
 
-    if (!data.table || !data.table.rows) {
-      return res.status(200).json([]);
-    }
+    const data = JSON.parse(text.substring(jsonStart, jsonEnd));
+    if (!data.table || !data.table.rows) return res.status(200).json([]);
 
     const cols = data.table.cols || [];
     const rows = data.table.rows;
 
-    // Define column indices by matching labels in the sheet
-    // We try to find the columns dynamically. If they are not found, we use the user's literal indices:
-    // User Literal indices:
-    // c[0]: Execution Date
-    // c[2]: Target Split Variant
-    // c[3]: Pre weight
-    // c[4]: Post weight
-    // c[6]: PullUps string
-    // c[8]: Bench string
-    // c[11]: Lateral Raises string
-    // c[15]: Squats string
-    let dateIdx = 0;
-    let splitIdx = 2;
-    let preWeightIdx = 3;
-    let postWeightIdx = 4;
-    let pullUpsIdx = 6;
-    let benchIdx = 8;
-    let lateralIdx = 11;
-    let squatsIdx = 15;
-    let notesIdx = 23;
-    let photoIdx = 24;
+    // ─── Dynamic column finder ────────────────────────────────────────────────
+    const findCol = (keywords) =>
+      cols.findIndex(
+        (c) => c && c.label && keywords.some((k) => c.label.toLowerCase().includes(k.toLowerCase()))
+      );
 
-    // Perform dynamic header check to adjust indices based on actual spreadsheet column order
-    if (cols.length > 0) {
-      const findColIdx = (substrings) => {
-        return cols.findIndex(col => 
-          col && col.label && 
-          substrings.some(sub => col.label.toLowerCase().includes(sub.toLowerCase()))
-        );
-      };
+    const idx = {
+      date:           findCol(['daily biometrics - date']),
+      day:            findCol(['day of the week']),
+      split:          findCol(["today's workout split"]),
+      preWeight:      findCol(['pre-workout weight']),
+      postWeight:     findCol(['post-workout weight']),
+      sleep:          findCol(['sleep duration']),
+      pullUps:        findCol(['assisted pull-ups', 'pull-ups']),
+      rows:           findCol(['seated machine rows']),
+      benchPress:     findCol(['dumbbell bench press']),
+      pushUps:        findCol(['assisted push-ups']),
+      shoulderPress:  findCol(['dumbbell shoulder press']),
+      lateralRaises:  findCol(['lateral raises']),
+      bicepCurls:     findCol(['bicep curls']),
+      tricepExt:      findCol(['overhead db tricep', 'tricep extension']),
+      wristCurls:     findCol(['wrist curls']),
+      squats:         findCol(['weighted squats']),
+      lunges:         findCol(['walking lunges']),
+      rdls:           findCol(['romanian deadlifts', 'rdls']),
+      calfRaises:     findCol(['calf raises']),
+      legRaises:      findCol(['lying leg raises']),
+      planks:         findCol(['core planks', 'planks & cobra']),
+      cardio:         findCol(['cardio finisher']),
+      notes:          findCol(['session notes', 'notes / rpe']),
+      photo:          findCol(['physique progress photo']),
+    };
 
-      const foundDate = findColIdx(['daily biometrics - date', 'timestamp']);
-      const foundSplit = findColIdx(["today's workout split", 'workout split', 'select today\'s']);
-      const foundPre = findColIdx(['pre-workout weight', 'pre weight', 'pre-workout body mass']);
-      const foundPost = findColIdx(['post-workout weight', 'post weight', 'post-workout body mass']);
-      const foundPullUps = findColIdx(['assisted pull-ups', 'pull-ups', 'pullups', 'pull ups']);
-      const foundBench = findColIdx(['dumbbell bench press', 'bench press', 'chest press']);
-      const foundLateral = findColIdx(['dumbbell lateral raises', 'lateral raises', 'lateral raise']);
-      const foundSquats = findColIdx(['weighted squats', 'squats', 'squat']);
-      const foundNotes = findColIdx(['session notes', 'notes', 'notes / rpe', 'submission notes']);
-      const foundPhoto = findColIdx(['physique progress photo', 'progress photo', 'physique photo', 'daily physique progress photo', 'photo']);
+    // ─── Parsers ──────────────────────────────────────────────────────────────
+    const getStr = (cells, i) => {
+      if (i < 0 || !cells[i]) return '';
+      const v = cells[i].v;
+      return v === null || v === undefined ? '' : String(v);
+    };
 
-      // Only re-map if we successfully find key headers (avoids false overrides on mock tests)
-      if (foundPre !== -1 && foundPost !== -1) {
-        if (foundDate !== -1) dateIdx = foundDate;
-        if (foundSplit !== -1) splitIdx = foundSplit;
-        preWeightIdx = foundPre;
-        postWeightIdx = foundPost;
-        if (foundPullUps !== -1) pullUpsIdx = foundPullUps;
-        if (foundBench !== -1) benchIdx = foundBench;
-        if (foundLateral !== -1) lateralIdx = foundLateral;
-        if (foundSquats !== -1) squatsIdx = foundSquats;
-        if (foundNotes !== -1) notesIdx = foundNotes;
-        if (foundPhoto !== -1) photoIdx = foundPhoto;
+    const getNum = (cells, i) => {
+      if (i < 0 || !cells[i]) return 0;
+      const n = parseFloat(cells[i].v);
+      return isNaN(n) ? 0 : n;
+    };
+
+    const parseDate = (cells, i) => {
+      if (i < 0 || !cells[i]) return '';
+      const cell = cells[i];
+      const src = cell.f || String(cell.v || '');
+      const m = src.match(/Date\((\d+),\s*(\d+),\s*(\d+)/);
+      if (m) {
+        const y = parseInt(m[1]);
+        const mo = parseInt(m[2]) + 1;
+        const d = parseInt(m[3]);
+        return `${String(d).padStart(2,'0')}/${String(mo).padStart(2,'0')}/${y}`;
       }
-    }
-
-    const parseDate = (cell) => {
-      if (!cell) return '';
-      let valStr = '';
-      if (cell.f) {
-        valStr = cell.f;
-      } else if (cell.v) {
-        valStr = String(cell.v);
-      } else {
-        return '';
-      }
-
-      if (valStr.includes('Date(')) {
-        const matches = valStr.match(/Date\((\d+),\s*(\d+),\s*(\d+)/);
-        if (matches) {
-          const year = parseInt(matches[1], 10);
-          const month = parseInt(matches[2], 10) + 1; // Google 0-indexed month
-          const day = parseInt(matches[3], 10);
-          const dd = String(day).padStart(2, '0');
-          const mm = String(month).padStart(2, '0');
-          return `${dd}/${mm}/${year}`;
-        }
-      }
-
       try {
-        const date = new Date(valStr);
-        if (!isNaN(date.getTime())) {
-          const dd = String(date.getDate()).padStart(2, '0');
-          const mm = String(date.getMonth() + 1).padStart(2, '0');
-          const yyyy = date.getFullYear();
-          return `${dd}/${mm}/${yyyy}`;
+        const d = new Date(src);
+        if (!isNaN(d.getTime())) {
+          return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
         }
-      } catch (e) {}
-
-      return valStr;
+      } catch(e) {}
+      return src;
     };
 
-    const parseWeight = (cell) => {
-      if (!cell) return 0;
-      const val = (typeof cell === 'object' && cell !== null) ? cell.v : cell;
-      if (val === null || val === undefined || val === '') return 0;
-      const num = parseFloat(val);
-      return isNaN(num) ? 0 : num;
-    };
-
-    const parseVolume = (cell) => {
-      if (!cell) return 0;
-      const val = (typeof cell === 'object' && cell !== null) ? cell.v : cell;
-      if (val === null || val === undefined || val === '') return 0;
-
-      const str = String(val).trim();
-      if (!str) return 0;
-
-      // Handle simple numbers if string has no slash, e.g. "80"
-      if (!str.includes('/')) {
-        const num = parseFloat(str);
-        return isNaN(num) ? 0 : num;
-      }
-
-      const parts = str.split('/').map(p => p.trim());
-      if (parts.length === 0 || parts[0] === '') return 0;
-
-      const weight = parseFloat(parts[0]);
-      if (isNaN(weight)) return 0;
-
+    const parseExerciseStr = (cells, i) => {
+      const raw = getStr(cells, i);
+      if (!raw || raw === 'N/A' || raw === '0') return { weight: 0, totalReps: 0, volume: 0, raw: '' };
+      const parts = raw.split('/').map(p => p.trim());
+      const weight = parseFloat(parts[0]) || 0;
       let totalReps = 0;
-      for (let i = 1; i < parts.length; i++) {
-        const reps = parseInt(parts[i], 10);
-        if (!isNaN(reps)) {
-          totalReps += reps;
-        }
+      for (let j = 1; j < parts.length; j++) {
+        const r = parseInt(parts[j]);
+        if (!isNaN(r)) totalReps += r;
       }
-
-      return weight * totalReps;
+      return { weight, totalReps, volume: weight * totalReps, raw };
     };
 
-    const parseStringVal = (cell) => {
-      if (!cell) return '';
-      const val = (typeof cell === 'object' && cell !== null) ? cell.v : cell;
-      return val === null || val === undefined ? '' : String(val);
+    const parseVolume = (cells, i) => parseExerciseStr(cells, i).volume;
+
+    // ─── Category classifier ──────────────────────────────────────────────────
+    const getCategory = (name) => {
+      const n = name.toLowerCase();
+      if (n.includes('leg press') || n.includes('leg extension') || n.includes('leg curl') ||
+          n.includes('squat') || n.includes('lunge') || n.includes('rdl') || n.includes('deadlift') ||
+          n.includes('calf') || n.includes('hyper extension') || n.includes('hyperextension') ||
+          n.includes('quad') || n.includes('hamstring') || n.includes('glute')) return 'legs';
+      if (n.includes('bicep') || n.includes('tricep') || n.includes('curl') || n.includes('hammer') ||
+          n.includes('pushdown') || n.includes('wrist') || n.includes('forearm')) return 'arms';
+      if (n.includes('lateral') || n.includes('face pull') || n.includes('shoulder') || n.includes('shrug') ||
+          n.includes('delt') || n.includes('ohp') || n.includes('military')) return 'shoulders';
+      if (n.includes('bench') || n.includes('chest') || n.includes('fly') || n.includes('flye') ||
+          n.includes('push-up') || n.includes('pushup') || n.includes('incline') ||
+          (n.includes('press') && !n.includes('leg') && !n.includes('shoulder') && !n.includes('overhead')))
+        return 'chest';
+      if (n.includes('pull-up') || n.includes('pullup') || n.includes('pulldown') || n.includes('row') ||
+          n.includes('lat ') || n.includes('back') || n.includes('cable row') || n.includes('seated pull'))
+        return 'back';
+      if (n.includes('belly') || n.includes('crunch') || n.includes('plank') || n.includes('sit-up') ||
+          n.includes('abs') || n.includes('core') ||
+          (n.includes('raise') && !n.includes('lateral') && !n.includes('calf'))) return 'core';
+      if (n.includes('cardio') || n.includes('cycling') || n.includes('run') || n.includes('treadmill') ||
+          n.includes('bike') || n.includes('walk') || n.includes('football')) return 'cardio';
+      return 'other';
     };
 
-    const formattedRecords = rows.map((row) => {
+    // ─── Parse accessories from comment box ───────────────────────────────────
+    const parseAccessories = (notes) => {
+      const accessories = [];
+      if (!notes) return accessories;
+      const seen = new Set();
+      // Match "Exercise Name - weight/r1/r2/r3" patterns
+      const exerciseRegex = /([A-Za-z][A-Za-z0-9\s&()'\-+]*?)\s*[-:]\s*([\d.]+(?:\s*[\/|]\s*[\d.]+)+)/g;
+      let match;
+      while ((match = exerciseRegex.exec(notes)) !== null) {
+        let name = match[1].trim().replace(/^[,.\s]+|[,.\s]+$/g, '').trim();
+        if (!name || name.length < 3 || /^\d+$/.test(name)) continue;
+        if (seen.has(name.toLowerCase())) continue;
+        seen.add(name.toLowerCase());
+        const rawValues = match[2].trim();
+        const parts = rawValues.split(/[\/|]/).map(p => p.trim());
+        const weight = parseFloat(parts[0]) || 0;
+        let totalReps = 0;
+        for (let j = 1; j < parts.length; j++) {
+          const r = parseInt(parts[j]);
+          if (!isNaN(r)) totalReps += r;
+        }
+        const volume = weight * totalReps;
+        accessories.push({ name, weight, totalReps, volume, raw: rawValues, category: getCategory(name), source: 'comment' });
+      }
+      return accessories;
+    };
+
+    const extractComment = (notes, accessories) => {
+      if (!notes) return '';
+      let comment = notes;
+      accessories.forEach(a => {
+        const escapedName = a.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(escapedName + '\\s*[-:]\\s*' + a.raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        comment = comment.replace(pattern, '');
+      });
+      return comment
+        .replace(/^[,\s\-.:()\n]+/, '')
+        .replace(/[,\s\-.:()\n]+$/, '')
+        .replace(/\n+/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    };
+
+    // ─── Build form exercises from structured columns ──────────────────────────
+    const buildFormExercises = (cells) => {
+      const result = [];
+      const addEx = (name, colIdx, category) => {
+        const d = parseExerciseStr(cells, colIdx);
+        if (d.raw) result.push({ name, weight: d.weight, totalReps: d.totalReps, volume: d.volume, raw: d.raw, category, source: 'form' });
+      };
+      addEx('Assisted Pull-ups',            idx.pullUps,      'back');
+      addEx('Seated Machine Rows',          idx.rows,         'back');
+      addEx('Dumbbell Bench Press',         idx.benchPress,   'chest');
+      addEx('Assisted Push-ups',            idx.pushUps,      'chest');
+      addEx('Dumbbell Shoulder Press',      idx.shoulderPress,'shoulders');
+      addEx('Dumbbell Lateral Raises',      idx.lateralRaises,'shoulders');
+      addEx('Dumbbell Bicep Curls',         idx.bicepCurls,   'arms');
+      addEx('Overhead DB Tricep Ext',       idx.tricepExt,    'arms');
+      addEx('Wrist Curls + Reverse Curls',  idx.wristCurls,   'arms');
+      addEx('Weighted Squats',              idx.squats,       'legs');
+      addEx('Walking Lunges',              idx.lunges,       'legs');
+      addEx('Dumbbell Romanian Deadlifts',  idx.rdls,         'legs');
+      addEx('Standing Calf Raises',         idx.calfRaises,   'legs');
+      addEx('Lying Leg Raises',             idx.legRaises,    'core');
+      addEx('Core Planks & Cobra Stretch',  idx.planks,       'core');
+      const cardioRaw = getStr(cells, idx.cardio);
+      if (cardioRaw && cardioRaw !== '0')
+        result.push({ name: 'Cardio Finisher', weight: 0, totalReps: 0, volume: 0, raw: cardioRaw, category: 'cardio', source: 'form', isCardio: true });
+      return result;
+    };
+
+    // ─── Process all rows ─────────────────────────────────────────────────────
+    const records = rows.map((row) => {
       if (!row || !row.c) return null;
-      
       const cells = row.c;
-      const date = parseDate(cells[dateIdx]);
-      
-      // Skip empty date rows
+      const date = parseDate(cells, idx.date);
       if (!date) return null;
 
-      const routine = parseStringVal(cells[splitIdx]);
-      const preWeight = parseWeight(cells[preWeightIdx]);
-      const postWeight = parseWeight(cells[postWeightIdx]);
-      const pullUpVolume = parseVolume(cells[pullUpsIdx]);
-      const benchVolume = parseVolume(cells[benchIdx]);
-      const lateralVolume = parseVolume(cells[lateralIdx]);
-      const squatVolume = parseVolume(cells[squatsIdx]);
-      const photoUrl = parseStringVal(cells[photoIdx]);
-      const notes = parseStringVal(cells[notesIdx]);
+      const routine     = getStr(cells, idx.split);
+      const preWeight   = getNum(cells, idx.preWeight);
+      const postWeight  = getNum(cells, idx.postWeight);
+      const sleep       = getStr(cells, idx.sleep);
+      const notes       = getStr(cells, idx.notes);
+      const photoUrl    = getStr(cells, idx.photo);
+      const dayOfWeek   = getStr(cells, idx.day);
 
-      // Parse accessories from notes
-      let accessoryVolume = 0;
-      const accessories = [];
-      const keywords = [];
+      // Legacy volume fields (keep for existing charts)
+      const pullUpVolume  = parseVolume(cells, idx.pullUps);
+      const benchVolume   = parseVolume(cells, idx.benchPress);
+      const lateralVolume = parseVolume(cells, idx.lateralRaises);
+      const squatVolume   = parseVolume(cells, idx.squats);
 
-      const getCategory = (exName) => {
-        const n = exName.toLowerCase();
-        
-        // 1. Legs (check legs before general terms like "press" or "extension")
-        if (n.includes('leg press') || n.includes('squat') || n.includes('leg extension') || 
-            n.includes('leg curl') || n.includes('calf') || n.includes('rdl') || 
-            n.includes('lunge') || n.includes('quad') || n.includes('hamstring') || n.includes('calf') || n.includes('calves')) {
-          return 'legs';
-        }
-        
-        // 2. Arms (check arm curls and pushdowns before other categories)
-        if (n.includes('bicep') || n.includes('tricep') || n.includes('curl') || 
-            n.includes('hammer') || n.includes('pushdown') || n.includes('kickback') || 
-            n.includes('wrist') || n.includes('forearm') || n.includes('arm')) {
-          return 'arms';
-        }
-        
-        // 3. Shoulders
-        if (n.includes('lateral') || n.includes('delt') || n.includes('face pull') || 
-            n.includes('face-pull') || n.includes('shoulder') || n.includes('overhead press') || 
-            n.includes('ohp') || n.includes('military press') || n.includes('shrug')) {
-          return 'shoulders';
-        }
-        
-        // 4. Chest
-        if (n.includes('bench') || n.includes('chest') || n.includes('flye') || 
-            n.includes('flys') || n.includes('flyes') || n.includes('push-up') || n.includes('pushup') || 
-            (n.includes('press') && !n.includes('leg') && !n.includes('shoulder') && !n.includes('overhead'))) {
-          return 'chest';
-        }
-        
-        // 5. Back
-        if (n.includes('pull-up') || n.includes('pullup') || n.includes('pulldown') || 
-            n.includes('row') || n.includes('chin-up') || n.includes('chinup') || 
-            n.includes('deadlift') || n.includes('lat') || n.includes('back')) {
-          return 'back';
-        }
-        
-        // 6. Core
-        if (n.includes('belly') || n.includes('crunch') || n.includes('plank') || 
-            n.includes('sit-up') || n.includes('situp') || n.includes('abs') || 
-            n.includes('core') || (n.includes('raise') && !n.includes('lateral'))) {
-          return 'core';
-        }
-        
-        return 'other';
-      };
+      const formExercises  = buildFormExercises(cells);
+      const accessories    = parseAccessories(notes);
 
-      // Match any exercise name followed by - or : and sets/reps (e.g. Leg Press - 100/15/15/15)
-      const exerciseRegex = /([a-zA-Z0-9\s&()'+/\\]+?)\s*[:\-]\s*([\d.]+(?:\s*[\/|\\]\s*[\d.]+)+)/gi;
-      let match;
-      const parsedMatches = [];
-      while ((match = exerciseRegex.exec(notes)) !== null) {
-        let name = match[1].trim();
-        // Strip leading comma, dot or spaces from name
-        name = name.replace(/^[^a-zA-Z0-9]+/, '').trim();
-        const rawValues = match[2].trim();
-        const volume = parseVolume(rawValues);
-        const category = getCategory(name);
-        
-        accessoryVolume += volume;
-        accessories.push({ name, volume, raw: rawValues, category });
-        parsedMatches.push(match[0]);
-      }
+      // Merge: avoid duplicating exercises already in form
+      const formNames = new Set(formExercises.map(e => e.name.toLowerCase()));
+      const uniqueAcc = accessories.filter(a => !formNames.has(a.name.toLowerCase()));
+      const allExercises = [...formExercises, ...uniqueAcc];
 
-      // Remove all matched exercise log patterns from notes to isolate pure personal journal entries
-      let comment = notes;
-      parsedMatches.forEach(m => {
-        comment = comment.replace(m, '');
-      });
-      // Clean up punctuation leftovers
-      comment = comment
-        .replace(/^[,\s\-:.]+/, '') 
-        .replace(/[,\s\-:.]+$/, '') 
-        .replace(/\s*,\s*,/g, ',')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const accessoryVolume    = accessories.reduce((s, a) => s + a.volume, 0);
+      const totalSessionVolume = formExercises.reduce((s, e) => s + e.volume, 0) + accessoryVolume;
 
-      // Check for recovery keywords
-      const KEYWORDS = ['Steam Bath', 'Trainer Swaps', 'Sauna', 'Spa', 'Pool', 'Stretch', 'Cardio Extra'];
-      KEYWORDS.forEach(kw => {
-        if (notes.toLowerCase().includes(kw.toLowerCase())) {
-          keywords.push(kw);
-        }
-      });
+      const comment = extractComment(notes, accessories);
+
+      const sleepScore = sleep.includes('9+') ? 10 : sleep.includes('8') ? 8 :
+                         sleep.includes('7') ? 7 : sleep.includes('6') ? 6 :
+                         sleep.includes('5.5') ? 5 : sleep.includes('less') ? 3 : 5;
 
       return {
-        date,
-        routine,
-        preWeight,
-        postWeight,
-        pullUpVolume,
-        benchVolume,
-        lateralVolume,
-        squatVolume,
-        photoUrl,
-        notes,
-        comment,
-        accessoryVolume,
-        accessories,
-        keywords
+        date, dayOfWeek, routine, preWeight, postWeight, sleep, sleepScore,
+        pullUpVolume, benchVolume, lateralVolume, squatVolume,
+        accessoryVolume, totalSessionVolume,
+        photoUrl, notes, comment,
+        accessories, formExercises, allExercises,
+        keywords: []
       };
     }).filter(Boolean);
 
-    res.status(200).json(formattedRecords);
+    res.status(200).json(records);
   } catch (error) {
-    console.error('Error fetching/parsing workout data:', error);
-    res.status(500).json({ error: 'Failed to aggregate workout data pipeline' });
+    console.error('Workout API error:', error);
+    res.status(500).json({ error: 'Failed to load workout data' });
   }
 }
