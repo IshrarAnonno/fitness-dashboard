@@ -47,4 +47,8 @@ Then redeploy the project.
 - Exercises that have their own column in the sheet (bench press, squats, …) go into that column; everything else is written into the notes as `Name - 30/16/16/16`, the same format you used by hand.
 - Weight for dumbbell exercises is the total of both dumbbells, as before. The app shows the per-hand number next to it.
 - No signal at the gym? The session is kept on the phone and sent automatically when you're back online.
-- Progress photos aren't part of the app yet; keep using the Google Form for those.
+- Progress photos: add one with **Add photo** when logging. They're saved to a Drive folder called
+  *Fitness Tracker Photos* and stay private. The dashboard shows them through the site once a browser
+  has entered the PIN (phones that saved the PIN in the logger are unlocked automatically).
+- Catch-up photos from a computer: name each file after its session date (`21 Sep, 2026.jpeg`), import the
+  sessions first, then run `node scripts/upload-photos.mjs "<folder>"` (add `--replace` to overwrite).

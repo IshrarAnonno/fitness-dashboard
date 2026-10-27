@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import {
   Plus, Minus, X, Search, Check, ChevronDown, ChevronUp, Dumbbell, LayoutDashboard,
-  Settings, Trash2, History, CloudOff, Loader2, RotateCcw, Copy, ClipboardPaste, AlertTriangle,
+  Settings, Trash2, History, CloudOff, Loader2, RotateCcw, Copy, ClipboardPaste, AlertTriangle, Camera,
 } from 'lucide-react';
 import {
   EXERCISES, CATEGORIES, SPLITS, SLEEP_OPTIONS,
@@ -41,8 +41,27 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 const emptySession = () => ({
   date: todayISO(), split: '', preWeight: '', postWeight: '', sleep: '',
-  exercises: [], cardioDistance: '', cardioCalories: '', notes: '',
+  exercises: [], cardioDistance: '', cardioCalories: '', notes: '', photo: null,
 });
+
+// Shrinks a picked photo to a JPEG of at most 1600px so it fits in one request
+const readPhoto = (file) => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    resolve({ mimeType: 'image/jpeg', data: canvas.toDataURL('image/jpeg', 0.85).split(',')[1] });
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that photo')); };
+  img.src = url;
+});
+const unlockPhotos = (pin) =>
+  fetch('/api/unlock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) }).catch(() => {});
 
 // ── History digest: last performance + frequency per exercise ────────────────
 function useHistory() {
@@ -550,14 +569,15 @@ export default function LogPage() {
       const { status, body } = await post({ ...payload, pin });
       if (status === 401) { store.del(KEY.pin); setPinError('That PIN was not accepted.'); setSubmitAfterPin(true); setPinOpen(true); return; }
       if (status !== 200) { setStatus({ kind: 'err', text: body.error || `Server error (${status})` }); return; }
-      setStatus({ kind: 'ok', text: `Saved to your sheet — ${dayOf(session.date)}, ${session.exercises.length} exercise(s)` });
+      setStatus({ kind: 'ok', text: `Saved to your sheet — ${dayOf(session.date)}, ${session.exercises.length} exercise(s)${session.photo ? ' + photo' : ''}` });
+      unlockPhotos(pin);
       setSession(emptySession());
       history.reload();
     } catch {
       // Offline at the gym: keep it on the phone and send when back online
-      const next = [...store.get(KEY.queue, []), payload];
+      const next = [...store.get(KEY.queue, []), { ...payload, photo: null }];
       store.set(KEY.queue, next); setQueue(next);
-      setStatus({ kind: 'queued', text: 'No connection — saved on this phone, will sync automatically.' });
+      setStatus({ kind: 'queued', text: `No connection — saved on this phone, will sync automatically.${payload.photo ? ' The photo could not be kept offline; add it again later.' : ''}` });
       setSession(emptySession());
     } finally { setBusy(false); }
   };
@@ -723,7 +743,28 @@ export default function LogPage() {
             className="w-full bg-white/4 border border-white/8 rounded-2xl px-4 py-3 text-base text-white outline-none placeholder:text-slate-600 resize-none" />
         </section>
 
-        {(session.exercises.length > 0 || session.notes) && (
+        {/* Progress photo */}
+        <section>
+          <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2 px-1">Progress photo</p>
+          {session.photo ? (
+            <div className="relative w-32">
+              <img src={`data:${session.photo.mimeType};base64,${session.photo.data}`} alt="Progress photo" className="w-32 h-44 object-cover rounded-2xl border border-white/10" />
+              <button onClick={() => update({ photo: null })} className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-black border border-white/20 flex items-center justify-center text-slate-300" aria-label="Remove photo"><X className="h-4 w-4" /></button>
+            </div>
+          ) : (
+            <label className="h-14 rounded-2xl bg-white/4 border border-white/8 text-slate-300 font-semibold flex items-center justify-center gap-2 active:bg-white/8">
+              <Camera className="h-5 w-5" /> Add photo
+              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) return;
+                try { update({ photo: await readPhoto(file) }); } catch (err) { setStatus({ kind: 'err', text: err.message }); }
+              }} />
+            </label>
+          )}
+        </section>
+
+        {(session.exercises.length > 0 || session.notes || session.photo) && (
           <button onClick={() => { if (confirm('Clear this draft?')) setSession(emptySession()); }}
             className="self-center flex items-center gap-1.5 text-sm text-slate-500 py-2">
             <RotateCcw className="h-4 w-4" /> Clear draft
@@ -773,7 +814,7 @@ export default function LogPage() {
         askPin={(wrong) => { if (wrong) store.del(KEY.pin); setPinError(wrong ? 'That PIN was not accepted.' : ''); setSubmitAfterPin(false); setPinOpen(true); }}
         onSaved={(n) => { setStatus({ kind: 'ok', text: `Imported ${n} session(s) into your sheet` }); history.reload(); }} />
       <PinSheet open={pinOpen} onClose={() => setPinOpen(false)} error={pinError}
-        onSave={(pin) => { store.set(KEY.pin, pin); setPinOpen(false); setPinError(''); if (submitAfterPin && canSubmit) submit(pin); }} />
+        onSave={(pin) => { store.set(KEY.pin, pin); unlockPhotos(pin); setPinOpen(false); setPinError(''); if (submitAfterPin && canSubmit) submit(pin); }} />
     </div>
   );
 }

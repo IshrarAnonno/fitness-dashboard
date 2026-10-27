@@ -15,14 +15,60 @@ import {
   Flame
 } from 'lucide-react';
 
+// Progress photos are private Drive files, so they're served through /api/photo,
+// which only answers browsers unlocked with the logging PIN (see usePhotoAccess).
 const getDirectDriveUrl = (driveUrl) => {
   if (!driveUrl) return '';
   const match = driveUrl.match(/(?:id=|\/d\/|open\?id=)([^&]+)/);
   if (match && match[1]) {
-    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    return `/api/photo?id=${encodeURIComponent(match[1])}`;
   }
   return driveUrl;
 };
+
+// 'checking' | 'unlocked' | 'locked'. A phone that already saved its PIN in the
+// workout logger is unlocked automatically.
+function usePhotoAccess() {
+  const [access, setAccess] = useState('checking');
+  const unlock = async (pin) => {
+    const r = await fetch('/api/unlock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
+    if (r.ok) setAccess('unlocked');
+    return r.ok;
+  };
+  useEffect(() => {
+    (async () => {
+      try {
+        const { unlocked } = await (await fetch('/api/unlock')).json();
+        if (unlocked) return setAccess('unlocked');
+        let saved = '';
+        try { saved = JSON.parse(localStorage.getItem('ft.pin') || '""'); } catch {}
+        if (!(saved && (await unlock(saved)))) setAccess('locked');
+      } catch { setAccess('locked'); }
+    })();
+  }, []);
+  return { access, unlock };
+}
+
+function PhotoUnlock({ onUnlock }) {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!(await onUnlock(pin))) setError('That PIN was not accepted.');
+  };
+  return (
+    <form onSubmit={submit} className="bg-slate-900/40 border border-slate-850 rounded-2xl p-10 text-center text-xs text-slate-400 font-mono flex flex-col items-center gap-3">
+      <Camera className="h-8 w-8 text-slate-500" />
+      <div className="text-slate-300">Progress photos are private</div>
+      <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">Enter your logging PIN once to view them on this device.</p>
+      <input value={pin} onChange={(e) => setPin(e.target.value)} type="password" inputMode="numeric" autoComplete="off"
+        className="w-48 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-base text-white text-center tracking-widest outline-none" />
+      {error && <div className="text-rose-400">{error}</div>}
+      <button type="submit" disabled={!pin} className="px-5 py-2 rounded-xl bg-sky-500 text-black font-bold disabled:opacity-30">Unlock photos</button>
+    </form>
+  );
+}
 
 // Muscle groups definition for the interactive anatomical scan
 const MUSCLES = {
@@ -99,6 +145,7 @@ export default function PhysiqueTracker({ data, loading, error }) {
   
   const [selectedMuscle, setSelectedMuscle] = useState('lats');
   const [lightboxUrl, setLightboxUrl] = useState('');
+  const { access, unlock } = usePhotoAccess();
 
   // Extract muscle-specific volumes from a record
   const getMuscleVolume = (record, category) => {
@@ -242,11 +289,20 @@ export default function PhysiqueTracker({ data, loading, error }) {
         <Camera className="h-8 w-8 text-slate-600" />
         <div>No physique progress photos recorded yet.</div>
         <p className="text-[10px] text-slate-600 max-w-xs leading-relaxed">
-          Please submit a workout log via the Google Form that includes a Google Drive link in the progress photo field.
+          Add a progress photo when you log a session in the workout logger.
         </p>
       </div>
     );
   }
+
+  if (access === 'checking') {
+    return (
+      <div className="bg-slate-900/40 border border-slate-850 rounded-2xl p-12 text-center text-xs text-slate-400 font-mono">
+        <RefreshCw className="h-8 w-8 animate-spin text-sky-400 mx-auto" />
+      </div>
+    );
+  }
+  if (access === 'locked') return <PhotoUnlock onUnlock={unlock} />;
 
   // Calculate telemetry comparison metrics for the selected before/after indices
   const beforeRecord = data[beforeIdx];
@@ -423,6 +479,7 @@ export default function PhysiqueTracker({ data, loading, error }) {
             <div className="lg:col-span-5 flex flex-col gap-3">
               <div className="relative rounded-2xl overflow-hidden border border-slate-850 aspect-[4/5] bg-slate-950 shadow-2xl">
                 <img 
+                  loading="lazy"
                   src={getDirectDriveUrl(selectedScannedRecord.photoUrl)} 
                   alt={`Physique Target ${selectedScannedRecord.date}`}
                   className="w-full h-full object-cover object-center"
@@ -680,6 +737,7 @@ export default function PhysiqueTracker({ data, loading, error }) {
                 {/* BEFORE IMAGE (Bottom/Left) */}
                 <div className="absolute inset-0">
                   <img 
+                    loading="lazy"
                     src={getDirectDriveUrl(beforeRecord.photoUrl)} 
                     alt="Before" 
                     className="w-full h-full object-cover object-center pointer-events-none" 
@@ -695,6 +753,7 @@ export default function PhysiqueTracker({ data, loading, error }) {
                   style={{ clipPath: `inset(0 0 0 ${comparePct}%)` }}
                 >
                   <img 
+                    loading="lazy"
                     src={getDirectDriveUrl(afterRecord.photoUrl)} 
                     alt="After" 
                     className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none" 
@@ -786,6 +845,7 @@ export default function PhysiqueTracker({ data, loading, error }) {
               >
                 <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-slate-900">
                   <img 
+                    loading="lazy"
                     src={getDirectDriveUrl(r.photoUrl)} 
                     alt={r.date} 
                     className="w-full h-full object-cover object-center pointer-events-none"
