@@ -69,13 +69,18 @@ function useHistory() {
   const [loaded, setLoaded] = useState(false);
   const load = useCallback(async () => {
     try {
-      const r = await fetch('/api/workout');
+      const r = await fetch('/api/workout', { cache: 'no-store' });
       const data = await r.json();
       if (Array.isArray(data)) setRecords(data);
     } catch {}
     setLoaded(true);
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [load]);
 
   const digest = useMemo(() => {
     const last = {}, count = {}, bySplit = {}, dates = new Set();

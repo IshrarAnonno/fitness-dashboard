@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import {
   ResponsiveContainer, LineChart, Line, AreaChart, Area, BarChart, Bar,
@@ -158,6 +158,7 @@ export default function Dashboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const dataLen = useRef(0);
   const [view, setView] = useState('overview');
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedRecordIdx, setSelectedRecordIdx] = useState(null);
@@ -172,21 +173,28 @@ export default function Dashboard() {
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     setTodayName(days[new Date().getDay()]);
     fetchData();
+    // A home-screen app stays open in the background; pick up new sessions when it comes back
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchData(true); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/workout');
+      const res = await fetch('/api/workout', { cache: 'no-store' });
       if (!res.ok) throw new Error('API failed');
       const d = await res.json();
-      setData(d);
-      if (d.length > 0) {
+      setError(null);
+      // Keep the selected session on a background refresh unless new sessions arrived
+      if (d.length > 0 && (!silent || d.length !== dataLen.current)) {
         setSelectedRecord(d[d.length - 1]);
         setSelectedRecordIdx(d.length - 1);
       }
-    } catch (e) { setError('Failed to load data.'); }
-    finally { setLoading(false); }
+      dataLen.current = d.length;
+      setData(d);
+    } catch (e) { if (!silent) setError('Failed to load data.'); }
+    finally { if (!silent) setLoading(false); }
   };
 
   // ── Computed values ──────────────────────────────────────────────────────
@@ -300,7 +308,7 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <button onClick={fetchData} disabled={loading}
+          <button onClick={() => fetchData()} disabled={loading}
             className="flex items-center gap-2 bg-white/4 border border-white/8 hover:border-white/15 text-slate-300 py-2 px-3 rounded-xl text-[10px] font-bold cursor-pointer transition-all disabled:opacity-50">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
             <span className="hidden sm:block">Sync</span>
