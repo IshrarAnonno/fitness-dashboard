@@ -3,12 +3,13 @@ import Head from 'next/head';
 import Link from 'next/link';
 import {
   Plus, Minus, X, Search, Check, ChevronDown, ChevronUp, Dumbbell, LayoutDashboard,
-  Settings, Trash2, History, CloudOff, Loader2, RotateCcw, Copy,
+  Settings, Trash2, History, CloudOff, Loader2, RotateCcw, Copy, ClipboardPaste, AlertTriangle,
 } from 'lucide-react';
 import {
   EXERCISES, CATEGORIES, SPLITS, SLEEP_OPTIONS,
   findExercise, canonicalName, categoryOf, parseSets, formatSets,
 } from '../lib/exercises';
+import { parseLog } from '../lib/importText';
 
 const CAT_COLOR = {
   legs: '#10b981', back: '#38bdf8', chest: '#a855f7', arms: '#f59e0b',
@@ -347,6 +348,109 @@ function PinSheet({ open, onClose, onSave, error }) {
   );
 }
 
+// ── Paste & import (catch up on sessions written down elsewhere) ─────────────
+const IMPORT_EXAMPLE = `21 Sep, 2026
+76.3
+Assisted pullup - 22.7 10-3
+Pulling cable rows - 31.8 15-4
+Pullup - 22.7 10-10-8
+74.7`;
+
+function ImportSheet({ open, onClose, history, post, getPin, askPin, onSaved }) {
+  const [text, setText] = useState('');
+  const [sessions, setSessions] = useState(null);
+  const [state, setState] = useState({});        // date → 'saving' | 'ok' | error text
+  const [busy, setBusy] = useState(false);
+
+  const preview = () => {
+    const parsed = parseLog(text).map((s) => ({ ...s, skip: history.dates.has(s.date) }));
+    setSessions(parsed);
+    setState({});
+  };
+  const patch = (i, p) => setSessions((list) => list.map((s, j) => (j === i ? { ...s, ...p } : s)));
+
+  const todo = (sessions || []).filter((s) => !s.skip && state[s.date] !== 'ok');
+  const saveAll = async () => {
+    const pin = getPin();
+    if (!pin) { askPin(); return; }
+    setBusy(true);
+    let saved = 0;
+    for (const s of todo) {
+      setState((st) => ({ ...st, [s.date]: 'saving' }));
+      try {
+        const { status, body } = await post({ ...s, day: dayOf(s.date), pin });
+        if (status === 401) { setState((st) => ({ ...st, [s.date]: 'PIN not accepted' })); askPin(true); break; }
+        setState((st) => ({ ...st, [s.date]: status === 200 ? 'ok' : body.error || `Error ${status}` }));
+        if (status === 200) saved++; else break;
+      } catch {
+        setState((st) => ({ ...st, [s.date]: 'No connection' }));
+        break;
+      }
+    }
+    setBusy(false);
+    if (saved) onSaved(saved);
+  };
+
+  return (
+    <Sheet open={open} onClose={busy ? () => {} : onClose} title="Paste & import">
+      <div className="overflow-y-auto px-5 pb-6 flex flex-col gap-3">
+        {!sessions ? (
+          <>
+            <p className="text-sm text-slate-400">
+              Paste sessions you wrote down: a date line, your weight before, one line per exercise
+              (<span className="font-mono text-slate-300">Name - weight reps-sets</span>), your weight after.
+            </p>
+            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} placeholder={IMPORT_EXAMPLE}
+              className="w-full bg-white/4 border border-white/8 rounded-2xl px-4 py-3 text-sm font-mono text-white outline-none placeholder:text-slate-600" />
+            <button onClick={preview} disabled={!text.trim()} className="h-12 rounded-2xl bg-white text-black font-bold disabled:opacity-30">Preview</button>
+          </>
+        ) : (
+          <>
+            {sessions.length === 0 && <p className="text-sm text-rose-300">No sessions found. Each one needs to start with a date line like "21 Sep, 2026".</p>}
+            {sessions.map((s, i) => {
+              const st = state[s.date];
+              const logged = history.dates.has(s.date);
+              return (
+                <div key={s.date + i} className={`rounded-2xl border px-4 py-3 ${s.skip ? 'border-white/5 opacity-50' : 'border-white/10 bg-white/3'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-white">{dayOf(s.date).slice(0, 3)} {s.date}</span>
+                    <span className="text-xs text-slate-400 font-mono">{s.preWeight || '—'} → {s.postWeight || '—'} kg</span>
+                  </div>
+                  <select value={s.split} onChange={(e) => patch(i, { split: e.target.value })} disabled={busy}
+                    className="mt-2 w-full bg-white/5 border border-white/10 rounded-xl px-3 h-10 text-sm text-white [color-scheme:dark]">
+                    {SPLITS.map((x) => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                  <ul className="mt-2 text-xs text-slate-400 font-mono space-y-0.5">
+                    {s.exercises.map((e, k) => <li key={k}><span className="text-slate-200 font-sans">{e.name}</span> {formatSets(e)}</li>)}
+                  </ul>
+                  {s.warnings.map((w, k) => <p key={k} className="mt-1.5 text-xs text-amber-400 flex gap-1.5"><AlertTriangle className="h-3.5 w-3.5 shrink-0" />{w}</p>)}
+                  <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+                    <label className="flex items-center gap-2 text-slate-400">
+                      <input type="checkbox" checked={!s.skip} disabled={busy || st === 'ok'} onChange={(e) => patch(i, { skip: !e.target.checked })} />
+                      {logged ? 'Already in sheet — import anyway' : 'Import'}
+                    </label>
+                    {st === 'saving' && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
+                    {st === 'ok' && <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Saved</span>}
+                    {st && st !== 'ok' && st !== 'saving' && <span className="text-rose-400">{st}</span>}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="sticky bottom-0 pt-2 flex gap-2" style={{ background: '#0b0e17' }}>
+              <button onClick={() => setSessions(null)} disabled={busy} className="h-12 px-4 rounded-2xl bg-white/5 text-slate-300 font-semibold">Edit text</button>
+              <button onClick={saveAll} disabled={busy || !todo.length}
+                className="flex-1 h-12 rounded-2xl font-black text-black bg-gradient-to-r from-emerald-400 to-sky-400 disabled:opacity-30 flex items-center justify-center gap-2">
+                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+                {todo.length ? `Save ${todo.length} session${todo.length > 1 ? 's' : ''}` : 'All saved'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </Sheet>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function LogPage() {
   const history = useHistory();
@@ -363,6 +467,7 @@ export default function LogPage() {
   const [customs, setCustoms] = useState([]);
   const [status, setStatus] = useState(null);      // { kind: 'ok'|'err'|'queued', text }
   const [busy, setBusy] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // Restore draft / queue from this phone
   useEffect(() => {
@@ -478,6 +583,7 @@ export default function LogPage() {
             <span className="font-black tracking-wide text-[15px]">Log Workout</span>
           </div>
           <div className="flex items-center gap-1">
+            <button onClick={() => setImportOpen(true)} className="h-9 w-9 rounded-full flex items-center justify-center text-slate-400" aria-label="Paste & import"><ClipboardPaste className="h-5 w-5" /></button>
             <Link href="/dashboard" className="h-9 w-9 rounded-full flex items-center justify-center text-slate-400" aria-label="Dashboard"><LayoutDashboard className="h-5 w-5" /></Link>
             <button onClick={() => { setPinError(''); setSubmitAfterPin(false); setPinOpen(true); }} className="h-9 w-9 rounded-full flex items-center justify-center text-slate-400" aria-label="PIN settings"><Settings className="h-5 w-5" /></button>
           </div>
@@ -662,6 +768,10 @@ export default function LogPage() {
         <SetEditor entry={editing} history={history} onClose={() => setEditing(null)} onSave={saveEntry}
           onDelete={isNew ? null : () => deleteEntry(editing.id)} />
       )}
+      <ImportSheet open={importOpen} onClose={() => setImportOpen(false)} history={history} post={post}
+        getPin={() => store.get(KEY.pin, '')}
+        askPin={(wrong) => { if (wrong) store.del(KEY.pin); setPinError(wrong ? 'That PIN was not accepted.' : ''); setSubmitAfterPin(false); setPinOpen(true); }}
+        onSaved={(n) => { setStatus({ kind: 'ok', text: `Imported ${n} session(s) into your sheet` }); history.reload(); }} />
       <PinSheet open={pinOpen} onClose={() => setPinOpen(false)} error={pinError}
         onSave={(pin) => { store.set(KEY.pin, pin); setPinOpen(false); setPinError(''); if (submitAfterPin && canSubmit) submit(pin); }} />
     </div>
