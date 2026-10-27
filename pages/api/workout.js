@@ -1,3 +1,5 @@
+import { canonicalName, categoryOf } from '../../lib/exercises';
+
 export default async function handler(req, res) {
   try {
     const sheetUrl =
@@ -98,31 +100,7 @@ export default async function handler(req, res) {
 
     const parseVolume = (cells, i) => parseExerciseStr(cells, i).volume;
 
-    // ─── Category classifier ──────────────────────────────────────────────────
-    const getCategory = (name) => {
-      const n = name.toLowerCase();
-      if (n.includes('leg press') || n.includes('leg extension') || n.includes('leg curl') ||
-          n.includes('squat') || n.includes('lunge') || n.includes('rdl') || n.includes('deadlift') ||
-          n.includes('calf') || n.includes('hyper extension') || n.includes('hyperextension') ||
-          n.includes('quad') || n.includes('hamstring') || n.includes('glute')) return 'legs';
-      if (n.includes('bicep') || n.includes('tricep') || n.includes('curl') || n.includes('hammer') ||
-          n.includes('pushdown') || n.includes('wrist') || n.includes('forearm')) return 'arms';
-      if (n.includes('lateral') || n.includes('face pull') || n.includes('shoulder') || n.includes('shrug') ||
-          n.includes('delt') || n.includes('ohp') || n.includes('military')) return 'shoulders';
-      if (n.includes('bench') || n.includes('chest') || n.includes('fly') || n.includes('flye') ||
-          n.includes('push-up') || n.includes('pushup') || n.includes('incline') ||
-          (n.includes('press') && !n.includes('leg') && !n.includes('shoulder') && !n.includes('overhead')))
-        return 'chest';
-      if (n.includes('pull-up') || n.includes('pullup') || n.includes('pulldown') || n.includes('row') ||
-          n.includes('lat ') || n.includes('back') || n.includes('cable row') || n.includes('seated pull'))
-        return 'back';
-      if (n.includes('belly') || n.includes('crunch') || n.includes('plank') || n.includes('sit-up') ||
-          n.includes('abs') || n.includes('core') ||
-          (n.includes('raise') && !n.includes('lateral') && !n.includes('calf'))) return 'core';
-      if (n.includes('cardio') || n.includes('cycling') || n.includes('run') || n.includes('treadmill') ||
-          n.includes('bike') || n.includes('walk') || n.includes('football')) return 'cardio';
-      return 'other';
-    };
+    const getCategory = categoryOf;
 
     // ─── Parse accessories from comment box ───────────────────────────────────
     const parseAccessories = (notes) => {
@@ -133,8 +111,9 @@ export default async function handler(req, res) {
       const exerciseRegex = /([A-Za-z][A-Za-z0-9\s&()'\-+]*?)\s*[-:]\s*([\d.]+(?:\s*[\/|]\s*[\d.]+)+)/g;
       let match;
       while ((match = exerciseRegex.exec(notes)) !== null) {
-        let name = match[1].trim().replace(/^[,.\s]+|[,.\s]+$/g, '').trim();
-        if (!name || name.length < 3 || /^\d+$/.test(name)) continue;
+        const typed = match[1].trim().replace(/^[,.\s]+|[,.\s]+$/g, '').trim();
+        if (!typed || typed.length < 3 || /^\d+$/.test(typed)) continue;
+        const name = canonicalName(typed);
         if (seen.has(name.toLowerCase())) continue;
         seen.add(name.toLowerCase());
         const rawValues = match[2].trim();
@@ -146,7 +125,18 @@ export default async function handler(req, res) {
           if (!isNaN(r)) totalReps += r;
         }
         const volume = weight * totalReps;
-        accessories.push({ name, weight, totalReps, volume, raw: rawValues, category: getCategory(name), source: 'comment' });
+        accessories.push({ name, typed, weight, totalReps, volume, raw: rawValues, category: getCategory(name), source: 'comment' });
+      }
+      // Older shorthand: "Seated Pulldown (10kg, 4x15)"
+      const shorthandRegex = /([A-Za-z][A-Za-z\s&'\-+]*?)\s*\(\s*([\d.]+)\s*kg\s*,\s*(\d+)\s*x\s*(\d+)\s*\)/gi;
+      while ((match = shorthandRegex.exec(notes)) !== null) {
+        const name = canonicalName(match[1].trim());
+        if (name.length < 3 || seen.has(name.toLowerCase())) continue;
+        seen.add(name.toLowerCase());
+        const weight = parseFloat(match[2]) || 0;
+        const sets = parseInt(match[3], 10), reps = parseInt(match[4], 10);
+        const raw = [weight, ...Array(sets).fill(reps)].join('/');
+        accessories.push({ name, weight, totalReps: sets * reps, volume: weight * sets * reps, raw, category: getCategory(name), source: 'comment', shorthand: match[0] });
       }
       return accessories;
     };
@@ -155,7 +145,8 @@ export default async function handler(req, res) {
       if (!notes) return '';
       let comment = notes;
       accessories.forEach(a => {
-        const escapedName = a.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (a.shorthand) { comment = comment.split(a.shorthand).join(''); return; }
+        const escapedName = (a.typed || a.name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const pattern = new RegExp(escapedName + '\\s*[-:]\\s*' + a.raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
         comment = comment.replace(pattern, '');
       });
@@ -181,7 +172,7 @@ export default async function handler(req, res) {
       addEx('Dumbbell Shoulder Press',      idx.shoulderPress,'shoulders');
       addEx('Dumbbell Lateral Raises',      idx.lateralRaises,'shoulders');
       addEx('Dumbbell Bicep Curls',         idx.bicepCurls,   'arms');
-      addEx('Overhead DB Tricep Ext',       idx.tricepExt,    'arms');
+      addEx('Overhead DB Tricep Extension', idx.tricepExt,    'arms');
       addEx('Wrist Curls + Reverse Curls',  idx.wristCurls,   'arms');
       addEx('Weighted Squats',              idx.squats,       'legs');
       addEx('Walking Lunges',              idx.lunges,       'legs');

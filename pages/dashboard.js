@@ -167,7 +167,6 @@ export default function Dashboard() {
   const [selectedExercise, setSelectedExercise] = useState(null);
 
   const googleFormLink = "https://docs.google.com/forms/d/e/1FAIpQLSdVNfNAvYbliACRYzgkozkfvKB-bonPel-7J8TSKcaxPjAIHQ/viewform?usp=send_form";
-  const embedFormLink  = "https://docs.google.com/forms/d/e/1FAIpQLSdVNfNAvYbliACRYzgkozkfvKB-bonPel-7J8TSKcaxPjAIHQ/viewform?embedded=true";
 
   useEffect(() => {
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -937,22 +936,20 @@ export default function Dashboard() {
           <div className="max-w-2xl flex flex-col gap-6">
             <div>
               <h2 className="text-sm font-black tracking-widest uppercase font-mono text-slate-300">Log Workout</h2>
-              <p className="text-[9px] text-slate-500 font-mono mt-1">Submit your session data via Google Form</p>
+              <p className="text-[9px] text-slate-500 font-mono mt-1">Pick exercises, tap in sets — saves straight to your sheet</p>
+            </div>
+            <a href="/log"
+              className="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-black text-sm tracking-wider bg-gradient-to-r from-emerald-500 to-sky-500 text-black hover:from-emerald-400 hover:to-sky-400 transition-all shadow-lg shadow-emerald-500/10 cursor-pointer">
+              Open Workout Logger <Dumbbell className="h-4 w-4" />
+            </a>
+            <div className="bg-white/2 border border-white/6 rounded-2xl p-5 text-[11px] text-slate-400 leading-relaxed">
+              <p className="font-bold text-slate-200 mb-2">On iPhone</p>
+              <p>Open <span className="font-mono text-slate-200">/log</span> in Safari → Share → <span className="text-slate-200">Add to Home Screen</span>. It opens full-screen like an app and keeps your draft while you train.</p>
             </div>
             <a href={googleFormLink} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-black text-sm tracking-wider bg-gradient-to-r from-emerald-500 to-sky-500 text-black hover:from-emerald-400 hover:to-sky-400 transition-all shadow-lg shadow-emerald-500/10 cursor-pointer">
-              Open Google Form <ExternalLink className="h-4 w-4" />
+              className="self-start flex items-center gap-1.5 text-[10px] font-mono text-slate-500 hover:text-slate-300">
+              Old Google Form <ExternalLink className="h-3 w-3" />
             </a>
-            <div className="bg-white/2 border border-white/6 rounded-2xl overflow-hidden" style={{ minHeight: 700 }}>
-              <div className="bg-white/3 border-b border-white/6 px-4 py-2.5 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[9px] font-mono text-slate-400">Embedded Form</span>
-              </div>
-              <iframe src={embedFormLink} width="100%" height="700" frameBorder="0"
-                className="w-full filter invert opacity-80 border-none" title="Workout Log Form">
-                Loading…
-              </iframe>
-            </div>
           </div>
         )}
 

@@ -63,3 +63,6 @@ body {
 .animate-scan-laser {
   animation: scanLaser 2s linear infinite;
 }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
